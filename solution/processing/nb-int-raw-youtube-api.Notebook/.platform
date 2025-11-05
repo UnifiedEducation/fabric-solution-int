@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb-int-raw-youtube-api"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "916fc2ad-dcf6-9dde-4c02-831208465a4b"
+  }
+}
