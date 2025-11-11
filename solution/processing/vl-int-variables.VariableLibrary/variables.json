@@ -2,16 +2,28 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
   "variables": [
     {
-      "name": "RAW_LH_WORKSPACE_NAME",
+      "name": "LH_WORKSPACE_NAME",
       "note": "",
       "type": "String",
-      "value": "int-feature-youtube-api-raw-datastores"
+      "value": "int-feature-lakehouse-creation-datastores"
     },
     {
-      "name": "RAW_LH_NAME",
+      "name": "BRONZE_LH_NAME",
       "note": "",
       "type": "String",
       "value": "lh_int_bronze"
+    },
+    {
+      "name": "SILVER_LH_NAME",
+      "note": "",
+      "type": "String",
+      "value": "lh_int_silver"
+    },
+    {
+      "name": "GOLD_LH_NAME",
+      "note": "",
+      "type": "String",
+      "value": "lh_int_gold"
     }
   ]
 }

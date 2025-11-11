@@ -3,12 +3,16 @@
   "name": "TEST",
   "variableOverrides": [
     {
-      "name": "RAW_LH_NAME",
+      "name": "BRONZE_LH_NAME",
       "value": "lh_int_bronze"
     },
     {
-      "name": "RAW_LH_WORKSPACE_NAME",
+      "name": "LH_WORKSPACE_NAME",
       "value": "int-test-datastores"
+    },
+    {
+      "name": "SILVER_LH_NAME",
+      "value": "lh_int_silver"
     }
   ]
 }
