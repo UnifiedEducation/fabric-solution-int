@@ -120,8 +120,8 @@ def construct_abfs_write_path(write_location):
     """
     
     # 'variables' is the values from the Variable Library 
-    ws_name = variables.RAW_LH_WORKSPACE_NAME
-    lh_name = variables.RAW_LH_NAME
+    ws_name = variables.LH_WORKSPACE_NAME
+    lh_name = variables.BRONZE_LH_NAME
 
     formatted_date = datetime.now().strftime("%Y%m%d")
 
