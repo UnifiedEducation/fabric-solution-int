@@ -5,7 +5,7 @@
       "name": "LH_WORKSPACE_NAME",
       "note": "",
       "type": "String",
-      "value": "int-feature-lakehouse-creation-datastores"
+      "value": "int-feature-transforms-datastores"
     },
     {
       "name": "BRONZE_LH_NAME",
