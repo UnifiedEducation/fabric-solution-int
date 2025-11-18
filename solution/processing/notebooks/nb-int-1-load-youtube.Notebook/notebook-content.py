@@ -11,7 +11,7 @@
 
 # MARKDOWN ********************
 
-# #### PRJ005 🔶 INT Project (Sprint 5): Data LOAD Notebook  
+# #### PRJ005 🔶 INT Project (Sprint 5): Data LOAD Notebook (YouTube Datasets)  
 #  
 # > The code in this notebook is written as part of Week 5 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about). The intention is first to get the functionality working, in a way that's understandable for the community. Then, in future weeks, we will layer in things like refactoring, testing, error-handling, more defensive coding patterns to make our loading more robust.
 # 
@@ -28,6 +28,17 @@
 # CELL ********************
 
 import notebookutils 
+from delta.tables import DeltaTable
+from pyspark.sql.functions import explode, col, current_timestamp
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
 
 variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
 
@@ -86,8 +97,6 @@ most_recent_file = get_most_recent_file(channel_path)
 # META }
 
 # CELL ********************
-
-from pyspark.sql.functions import explode, col, current_timestamp
 
 def flatten_channel_json_to_df(most_recent_file): 
 
@@ -166,8 +175,6 @@ most_recent_file = get_most_recent_file(channel_path)
 
 # CELL ********************
 
-from pyspark.sql.functions import explode, col, current_timestamp
-
 def flatten_playlistItems_json_to_df(most_recent_file): 
 
     # read raw json into raw_df 
@@ -196,8 +203,6 @@ bronze_df_playlist_items = flatten_playlistItems_json_to_df(most_recent_file)
 # META }
 
 # CELL ********************
-
-from delta.tables import DeltaTable
 
 # get the lakehouse abfs path
 base_write_path = construct_abfs_path() 
@@ -243,8 +248,6 @@ most_recent_file = get_most_recent_file(channel_path)
 
 # CELL ********************
 
-from pyspark.sql.functions import explode, col, current_timestamp
-
 def flatten_videostats_json_to_df(most_recent_file): 
 
     # Read the JSON file
@@ -271,8 +274,6 @@ bronze_df_videos = flatten_videostats_json_to_df(most_recent_file)
 # META }
 
 # CELL ********************
-
-from delta.tables import DeltaTable
 
 # get the lakehouse abfs path
 base_write_path = construct_abfs_path() 
