@@ -17,13 +17,13 @@
 # 
 # #### In this notebook:
 # - Step 0: Solution Step Up - get variable library, define helper functions
-# - Step 1: Raw Channel JSON data to table
-# - Step 2: Raw Playlist Items JSON data to table
-# - Step 3: Raw Video Statistics JSON data to table
+# - Step 1: Clean Bronze Channel table and load to Silver
+# - Step 2: Clean Bronze PlaylistItems table and load to Silver
+# - Step 3: Clean Bronze Video Stats table and load to Silver
 #  
 # This notebook is dynamic: it can be run in Feature workspaces, DEV, TEST and PROD, thanks to the use of Variable libraries (and ABFS paths). 
 #  
-
+# #### Step 0: Solution set-up
 
 # CELL ********************
 
@@ -87,7 +87,9 @@ silver_lh_base_path = construct_abfs_path("silver")
 # CELL ********************
 
 def read_table_to_dataframe(base_abfs_path, schema, table_name): 
+    
     full_path = f"{base_abfs_path}Tables/{schema}/{table_name}"
+    
     return spark.read.format("delta").load(full_path)
 
 def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_function): 
@@ -106,17 +108,6 @@ def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_fu
     )
     
    
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-df = read_table_to_dataframe(bronze_lh_base_path, "youtube", "")
 
 # METADATA ********************
 
