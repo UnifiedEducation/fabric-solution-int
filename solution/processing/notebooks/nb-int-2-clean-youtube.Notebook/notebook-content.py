@@ -119,8 +119,9 @@ def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_fu
 # MARKDOWN ********************
 
 # #### Step 1: Cleaning Channel Dataset
-# Strategy: 
-# - dedupe records
+# Cleaning strategy for this dataset: 
+# - filtering of rows which have a blank unique ID column 
+# - de-duplication using a Window function
 
 
 # CELL ********************
@@ -136,7 +137,20 @@ df = read_table_to_dataframe(bronze_lh_base_path, "youtube", "channel")
 
 # CELL ********************
 
-# do some cleaning
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+# Remove nulls in the channel ID column
+df_clean = df.filter(F.col("channel_id").isNotNull())
+
+# create a window (that we'll use for deduplication)
+window_spec = Window.partitionBy("channel_id", F.to_date("loading_TS")).orderBy(F.col("loading_TS").desc())
+
+df_clean = (df_clean
+    .withColumn("row_num", F.row_number().over(window_spec))
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
 
 # METADATA ********************
 
@@ -150,7 +164,7 @@ df = read_table_to_dataframe(bronze_lh_base_path, "youtube", "channel")
 matching_func = """target.channel_id = source.channel_id 
            AND to_date(target.loading_TS) = to_date(source.loading_TS)"""
            
-write_dataframe_to_table(df, silver_lh_base_path, "youtube", "channel_stats", matching_func)
+write_dataframe_to_table(df_clean, silver_lh_base_path, "youtube", "channel_stats", matching_func)
 
 # METADATA ********************
 
@@ -162,6 +176,9 @@ write_dataframe_to_table(df, silver_lh_base_path, "youtube", "channel_stats", ma
 # MARKDOWN ********************
 
 # #### Step 2: Cleaning PlaylistItems dataset
+# Cleaning strategy for this dataset: 
+# - filtering of rows which have a blank unique ID column 
+# - de-duplication using a Window function
 
 
 # CELL ********************
@@ -178,6 +195,21 @@ df = read_table_to_dataframe(bronze_lh_base_path, "youtube", "playlist_items")
 # CELL ********************
 
 # do some cleaning
+# Remove nulls in the video ID and video Title column
+df_clean = df.filter(
+    F.col("video_id").isNotNull() & 
+    F.col("video_title").isNotNull()
+)
+
+# create a window (that we'll use for deduplication)
+window_spec = Window.partitionBy("video_id").orderBy(F.col("loading_TS").desc())
+
+df_clean = (
+    df_clean
+    .withColumn("row_num", F.row_number().over(window_spec))
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
 
 
 # METADATA ********************
@@ -191,7 +223,7 @@ df = read_table_to_dataframe(bronze_lh_base_path, "youtube", "playlist_items")
 
 matching_func = "target.video_id = source.video_id"
            
-write_dataframe_to_table(df, silver_lh_base_path, "youtube", "videos", matching_func)
+write_dataframe_to_table(df_clean, silver_lh_base_path, "youtube", "videos", matching_func)
 
 
 # METADATA ********************
@@ -204,7 +236,9 @@ write_dataframe_to_table(df, silver_lh_base_path, "youtube", "videos", matching_
 # MARKDOWN ********************
 
 # #### Step 3: Cleaning Video Stats dataset
-
+# Cleaning strategy for this dataset: 
+# - filtering of rows which have a blank unique ID column 
+# - de-duplication using a Window function
 
 # CELL ********************
 
@@ -220,7 +254,17 @@ df = read_table_to_dataframe(bronze_lh_base_path, "youtube", "videos")
 # CELL ********************
 
 # do some cleaning
+df_clean = df.filter(F.col("video_id").isNotNull())
 
+# create a window (that we'll use for deduplication)
+window_spec = Window.partitionBy("video_id", F.to_date("loading_TS")).orderBy(F.col("loading_TS").desc())
+
+df_clean = (
+    df_clean
+    .withColumn("row_num", F.row_number().over(window_spec))
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
 
 # METADATA ********************
 
