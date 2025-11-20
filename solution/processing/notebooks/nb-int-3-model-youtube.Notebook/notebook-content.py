@@ -29,6 +29,9 @@
 
 import notebookutils 
 from delta.tables import DeltaTable
+import pyspark.sql.functions as F
+from pyspark.sql.window import Window
+
 
 # METADATA ********************
 
@@ -133,7 +136,16 @@ df = read_table_to_dataframe(silver_lh_base_path, "youtube", "channel_stats")
 
 # CELL ********************
 
-# modeling
+transformed_df = df.select(
+    F.lit(1).alias("channel_surrogate_id"),
+    F.lit("youtube").alias("channel_platform"),
+    F.col("channel_name").alias("channel_account_name"),
+    F.col("channel_description").alias("channel_account_description"),
+    F.col("subscriber_count").alias("channel_total_subscribers"),
+    F.col("video_count").alias("channel_total_assets"),
+    F.col("view_count").alias("channel_total_views"),
+    F.col("loading_TS").alias("modified_TS")
+)
 
 # METADATA ********************
 
@@ -145,9 +157,9 @@ df = read_table_to_dataframe(silver_lh_base_path, "youtube", "channel_stats")
 # CELL ********************
 
 matching_func = """target.channel_surrogate_id = source.channel_surrogate_id 
-           AND to_date(target.modified_TS) = to_date(source.modified_TS)"""
+            AND to_date(target.modified_TS) = to_date(source.modified_TS)"""
            
-write_dataframe_to_table(df, gold_lh_base_path, "marketing", "channels", matching_func)
+write_dataframe_to_table(transformed_df, gold_lh_base_path, "marketing", "channels", matching_func)
 
 # METADATA ********************
 
@@ -174,7 +186,15 @@ df = read_table_to_dataframe(silver_lh_base_path, "youtube", "videos")
 
 # CELL ********************
 
-# modeling
+# perform the base transformation
+source_df = df.select(
+    F.col("video_id").alias("asset_natural_id"),
+    F.lit(1).alias("channel_surrogate_id"),
+    F.col("video_title").alias("asset_title"),
+    F.col("video_description").alias("asset_text"),
+    F.col("video_publish_TS").alias("asset_publish_date"),
+    F.col("loading_TS").alias("modified_TS")
+)
 
 # METADATA ********************
 
@@ -185,9 +205,61 @@ df = read_table_to_dataframe(silver_lh_base_path, "youtube", "videos")
 
 # CELL ********************
 
-matching_func = "target.asset_surrogate_id = source.asset_surrogate_id"
-           
-write_dataframe_to_table(df, gold_lh_base_path, "marketing", "assets", matching_func)
+# Get max surrogate ID from target Gold table
+full_write_path = f"{gold_lh_base_path}Tables/marketing/assets"
+
+delta_table = DeltaTable.forPath(spark, full_write_path)
+target_df = delta_table.toDF()
+max_id = target_df.agg(F.coalesce(F.max("asset_surrogate_id"), F.lit(0))).collect()[0][0]
+
+# order the videos/ assets by Publish Date
+window_spec = Window.orderBy("asset_publish_date")
+
+# 
+source_with_surrid = source_df.withColumn(
+    "asset_surrogate_id",
+    F.row_number().over(window_spec) + max_id
+)
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# MERGE with specific insert
+matching_function = """target.asset_surrogate_id = source.asset_surrogate_id 
+            AND to_date(target.modified_TS) = to_date(source.modified_TS)""" 
+
+(
+    delta_table.alias("target")
+    .merge(source_with_surrid.alias("source"), matching_function)
+    .whenMatchedUpdate(
+        set={
+            "asset_title": "source.asset_title",
+            "asset_text": "source.asset_text",
+            "asset_publish_date": "source.asset_publish_date",
+            "modified_TS": "source.modified_TS"
+        }
+    )
+    .whenNotMatchedInsert(
+        values={
+            "asset_surrogate_id": "source.asset_surrogate_id",
+            "asset_natural_id": "source.asset_natural_id",
+            "channel_surrogate_id": "source.channel_surrogate_id",
+            "asset_title": "source.asset_title",
+            "asset_text": "source.asset_text",
+            "asset_publish_date": "source.asset_publish_date",
+            "modified_TS": "source.modified_TS"
+        }
+    )
+    .execute()
+)
+
 
 # METADATA ********************
 
@@ -215,6 +287,24 @@ df = read_table_to_dataframe(silver_lh_base_path, "youtube", "video_statistics")
 # CELL ********************
 
 # modeling
+# Lookup asset_surrogate_id from the assets dimension
+assets_df = read_table_to_dataframe(gold_lh_base_path, "marketing", "assets")
+
+asset_lookup = assets_df.select("asset_natural_id", "asset_surrogate_id")
+
+# Join to get asset_surrogate_id, then transform columns
+df_transformed = (
+    df
+    .join(asset_lookup, df.video_id == asset_lookup.asset_natural_id, "left") 
+    .select(
+        F.col("asset_surrogate_id"),
+        F.col("video_view_count").alias("asset_total_views"),
+        F.lit(None).alias("asset_total_impressions"),  # empty, where it's unknown. 
+        F.col("video_like_count").alias("asset_total_likes"),
+        F.col("video_comment_count").alias("asset_total_comments"),
+        F.col("loading_TS").alias("modified_TS")
+    )
+)
 
 # METADATA ********************
 
@@ -225,9 +315,38 @@ df = read_table_to_dataframe(silver_lh_base_path, "youtube", "video_statistics")
 
 # CELL ********************
 
-matching_func = "target.asset_surrogate_id = source.asset_surrogate_id"
-           
-write_dataframe_to_table(df, gold_lh_base_path, "marketing", "asset_stats", matching_func)
+# Get the target table
+full_write_path = f"{gold_lh_base_path}Tables/marketing/asset_stats"
+delta_table = DeltaTable.forPath(spark, full_write_path)
+
+# MERGE - this is a Type 1 update (overwrite latest stats for each asset)
+
+matching_function = """target.asset_surrogate_id = source.asset_surrogate_id 
+            AND to_date(target.modified_TS) = to_date(source.modified_TS)""" 
+(
+    delta_table.alias("target")
+    .merge(df_transformed.alias("source"), matching_function)
+    .whenMatchedUpdate(
+        set={
+            "asset_total_views": "source.asset_total_views",
+            "asset_total_impressions": "source.asset_total_impressions",
+            "asset_total_likes": "source.asset_total_likes",
+            "asset_total_comments": "source.asset_total_comments",
+            "modified_TS": "source.modified_TS"
+        }
+    )
+    .whenNotMatchedInsert(
+        values={
+            "asset_surrogate_id": "source.asset_surrogate_id",
+            "asset_total_views": "source.asset_total_views",
+            "asset_total_impressions": "source.asset_total_impressions",
+            "asset_total_likes": "source.asset_total_likes",
+            "asset_total_comments": "source.asset_total_comments",
+            "modified_TS": "source.modified_TS"
+        }
+    )
+    .execute()
+)
 
 # METADATA ********************
 
