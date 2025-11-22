@@ -5,7 +5,7 @@
       "name": "LH_WORKSPACE_NAME",
       "note": "",
       "type": "String",
-      "value": "int-feature-transforms-datastores"
+      "value": "int-feature-validation-datastores"
     },
     {
       "name": "BRONZE_LH_NAME",
@@ -24,6 +24,48 @@
       "note": "",
       "type": "String",
       "value": "lh_int_gold"
+    },
+    {
+      "name": "_0_INGEST_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "fa01f811-cae0-487f-b8aa-f7b73c10a92c"
+    },
+    {
+      "name": "_1_LOAD_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "e4caf09e-a765-4d2c-991b-d94d8da2224e"
+    },
+    {
+      "name": "_2_CLEAN_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "e8defe6e-49d7-4fc6-9552-f80cd599ab9a"
+    },
+    {
+      "name": "_3_MODEL_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "15a248ab-23a9-495c-9398-074929f0caee"
+    },
+    {
+      "name": "_4_VALIDATE_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "22c824ae-754d-4ee8-af03-fa1db84e546d"
+    },
+    {
+      "name": "LHCREATE_ALL_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "03a4b572-9e5a-4ef8-833e-c48779a7d570"
+    },
+    {
+      "name": "PROCESSING_WORKSPACE_ID",
+      "note": "",
+      "type": "String",
+      "value": "ae258115-9733-449c-b271-6b910bd68ce3"
     }
   ]
 }

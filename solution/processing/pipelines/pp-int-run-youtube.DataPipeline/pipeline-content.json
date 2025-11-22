@@ -1,0 +1,203 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "If Create LH Tables TRUE",
+        "type": "IfCondition",
+        "dependsOn": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@pipeline().parameters.RUN_LHCREATE_BOOL",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [],
+          "ifTrueActivities": [
+            {
+              "name": "RUN LH CREATE NOTEBOOK",
+              "type": "TridentNotebook",
+              "dependsOn": [],
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "notebookId": {
+                  "value": "@pipeline().libraryVariables.vlintvariables_LHCREATE_ALL_NOTEBOOK_ID",
+                  "type": "Expression"
+                },
+                "workspaceId": {
+                  "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
+                  "type": "Expression"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Run 0 Ingest Notebook",
+        "type": "TridentNotebook",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "If Create LH Tables TRUE",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.vlintvariables__0_INGEST_NOTEBOOK_ID",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Run 1 Load Notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "Run 0 Ingest Notebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.vlintvariables__1_LOAD_NOTEBOOK_ID",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Run 2 Clean Notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "Run 1 Load Notebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.vlintvariables__2_CLEAN_NOTEBOOK_ID",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Run 3 Model Notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "Run 2 Clean Notebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.vlintvariables__3_MODEL_NOTEBOOK_ID",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "RUN_LHCREATE_BOOL": {
+        "type": "bool",
+        "defaultValue": false
+      }
+    },
+    "libraryVariables": {
+      "vlintvariables_LHCREATE_ALL_NOTEBOOK_ID": {
+        "type": "String",
+        "variableName": "LHCREATE_ALL_NOTEBOOK_ID",
+        "libraryName": "vl-int-variables"
+      },
+      "vlintvariables__0_INGEST_NOTEBOOK_ID": {
+        "type": "String",
+        "variableName": "_0_INGEST_NOTEBOOK_ID",
+        "libraryName": "vl-int-variables"
+      },
+      "vlintvariables__1_LOAD_NOTEBOOK_ID": {
+        "type": "String",
+        "variableName": "_1_LOAD_NOTEBOOK_ID",
+        "libraryName": "vl-int-variables"
+      },
+      "vlintvariables__2_CLEAN_NOTEBOOK_ID": {
+        "type": "String",
+        "variableName": "_2_CLEAN_NOTEBOOK_ID",
+        "libraryName": "vl-int-variables"
+      },
+      "vlintvariables__3_MODEL_NOTEBOOK_ID": {
+        "type": "String",
+        "variableName": "_3_MODEL_NOTEBOOK_ID",
+        "libraryName": "vl-int-variables"
+      },
+      "vlintvariables__4_VALIDATE_NOTEBOOK_ID": {
+        "type": "String",
+        "variableName": "_4_VALIDATE_NOTEBOOK_ID",
+        "libraryName": "vl-int-variables"
+      },
+      "vlintvariables_PROCESSING_WORKSPACE_ID": {
+        "type": "String",
+        "variableName": "PROCESSING_WORKSPACE_ID",
+        "libraryName": "vl-int-variables"
+      }
+    }
+  }
+}
