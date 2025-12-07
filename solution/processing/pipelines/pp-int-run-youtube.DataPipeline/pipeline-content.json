@@ -40,8 +40,6 @@
       {
         "name": "Run 0 Ingest Notebook",
         "type": "TridentNotebook",
-        "state": "Inactive",
-        "onInactiveMarkAs": "Succeeded",
         "dependsOn": [
           {
             "activity": "If Create LH Tables TRUE",
