@@ -29,7 +29,7 @@
 
 import notebookutils 
 from delta.tables import DeltaTable
-from pyspark.sql.functions import explode, col, current_timestamp
+from pyspark.sql.functions import explode, col, current_timestamp,to_timestamp
 
 # METADATA ********************
 

@@ -264,15 +264,14 @@ source_with_surrid = source_df.withColumn(
 # MARKDOWN ********************
 
 # About the loading logic: 
-# - in this example, we're loading based on the asset_surrogate_id AND the modified_TS as a DATE.  
+# - in this example, we're loading based on the asset_surrogate_id. This is more of a dimension table, so we don't need new values being written every day, only when it changes.   
 # - In designing our matching function like this, we're essentially creating an idempotent APPEND statement. We can run our notebook multiple times, but it will only write once per day. 
 # - we specify different writing logic, depending on whether it's a UPDATE or an INSERT. 
 
 # CELL ********************
 
 # MERGE with specific insert
-matching_function = """target.asset_surrogate_id = source.asset_surrogate_id 
-            AND to_date(target.modified_TS) = to_date(source.modified_TS)""" 
+matching_function = """target.asset_surrogate_id = source.asset_surrogate_id""" 
 
 (
     delta_table.alias("target")

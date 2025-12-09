@@ -13,6 +13,26 @@
     {
       "name": "SILVER_LH_NAME",
       "value": "lh_int_silver"
+    },
+    {
+      "name": "PROCESSING_WORKSPACE_ID",
+      "value": "a9fe5680-33e9-47e5-a2af-f823e3a65d88"
+    },
+    {
+      "name": "_0_INGEST_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "_1_LOAD_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "_2_CLEAN_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "_3_MODEL_NOTEBOOK_ID",
+      "value": ""
     }
   ]
 }
