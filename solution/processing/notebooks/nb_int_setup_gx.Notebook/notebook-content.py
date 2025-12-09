@@ -1,0 +1,261 @@
+# Fabric notebook source
+
+# METADATA ********************
+
+# META {
+# META   "kernel_info": {
+# META     "name": "synapse_pyspark"
+# META   },
+# META   "dependencies": {
+# META     "lakehouse": {
+# META       "default_lakehouse": "b117aae6-cd5a-4388-a567-89e49fe29dc2",
+# META       "default_lakehouse_name": "lh_int_admin",
+# META       "default_lakehouse_workspace_id": "6bd03de7-34a3-423b-b674-510b78ac0d75",
+# META       "known_lakehouses": [
+# META         {
+# META           "id": "b117aae6-cd5a-4388-a567-89e49fe29dc2"
+# META         }
+# META       ]
+# META     },
+# META     "environment": {
+# META       "environmentId": "ec5eb008-6641-80a2-4ba8-def4c4309668",
+# META       "workspaceId": "00000000-0000-0000-0000-000000000000"
+# META     }
+# META   }
+# META }
+
+# MARKDOWN ********************
+
+# #### PRJ006 🔶 INT Project (Sprint 6): Setup Great Expectations Context
+#  
+# > The code in this notebook is written as part of Sprint 6 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about). 
+# 
+# In this notebook, we: 
+# 1. create some functions (refactored from existing code we wrote in DQ010) - we made the older code idempotent. 
+# 2. We configure the parameters and Expectations for each of the three Gold-layer tables. We run each one. 
+# 
+# #### Step 1: Load in the simple GX setup functions I
+# This is just a slight refactoring of the code we developed in [DQ010](https://www.skool.com/fabricdojo/classroom/8166498c?md=929849d57ec44d988d59ef1c6287fd6f). We added in some idempotency to make it nicer to work with. 
+
+# CELL ********************
+
+import great_expectations as gx
+import great_expectations.expectations as gxe
+
+# Initialize context
+context = gx.get_context(mode="file", project_root_dir="/lakehouse/default/Files")
+
+
+def get_or_create_datasource(type, params):
+    """Gets existing datasource or creates new one."""
+    datasource_name = params['datasource_name']
+    
+    try:
+        # Try to get existing datasource
+        return context.data_sources.get(datasource_name)
+    except:
+        # Doesn't exist, create it
+        if type == 'csv':
+            return context.data_sources.add_pandas_filesystem(
+                name=datasource_name, 
+                base_directory=params['base_directory']
+            )
+        elif type == 'spark_df':
+            return context.data_sources.add_spark(name=datasource_name)
+        elif type == 'semantic_model':
+            return context.data_sources.add_pandas(name=datasource_name)
+
+
+def get_or_create_asset(datasource, type, params):
+    """Gets existing asset or creates new one."""
+    asset_name = params['dataasset_name']
+    
+    try:
+        return datasource.get_asset(asset_name)
+    except:
+        if type == 'csv':
+            return datasource.add_csv_asset(name=asset_name)
+        else:
+            return datasource.add_dataframe_asset(name=asset_name)
+
+
+def get_or_create_batch_definition(asset, type, params):
+    """Gets existing batch definition or creates new one."""
+    batch_def_name = f"{params['dataasset_name']}_batch_definition"
+    
+    try:
+        return asset.get_batch_definition(batch_def_name)
+    except:
+        if type == 'csv':
+            return asset.add_batch_definition_path(
+                name=batch_def_name, 
+                path=f"{params['dataasset_name']}.csv"
+            )
+        else:
+            return asset.add_batch_definition_whole_dataframe(batch_def_name)
+
+
+def get_or_create_suite(params, expectations_list):
+    """Gets existing suite or creates new one. Updates expectations."""
+    suite_name = f"{params['dataasset_name']}_expectations"
+    
+    try:
+        suite = context.suites.get(suite_name)
+    except:
+        suite = gx.ExpectationSuite(name=suite_name)
+        suite = context.suites.add(suite)
+    
+    # Add any new expectations (GX handles duplicates)
+    for expectation in expectations_list:
+        try:
+            suite.add_expectation(expectation)
+        except:
+            pass  # Expectation already exists
+    
+    return suite
+
+
+def get_or_create_validation_definition(batch_definition, suite, params):
+    """Gets existing validation definition or creates new one. Returns the definition."""
+    validation_name = f"{params['dataasset_name']}_validation"
+    
+    try:
+        validation_def = context.validation_definitions.get(validation_name)
+    except:
+        validation_def = gx.ValidationDefinition(
+            data=batch_definition, 
+            suite=suite, 
+            name=validation_name
+        )
+        validation_def = context.validation_definitions.add(validation_def)
+    
+    return validation_def
+
+
+def register_any_datasource(type=None, params={}, expectations_list=[]) -> None:
+    """Idempotent registration - safe to run multiple times.
+    
+    Inputs: 
+        type - string - one of "csv", "spark_df" or "semantic_model"
+        params - object - {"datasource_name": "", "dataasset_name": "", "base_directory": ""}
+        expectations_list - list - a list of GX Expectations for that dataset.
+    """
+    
+    # Step 1: Get or create datasource
+    datasource = get_or_create_datasource(type, params)
+    
+    # Step 2: Get or create asset
+    asset = get_or_create_asset(datasource, type, params)
+    
+    # Step 3: Get or create batch definition
+    batch_definition = get_or_create_batch_definition(asset, type, params)
+    
+    # Step 4: Get or create expectation suite
+    suite = get_or_create_suite(params, expectations_list)
+    
+    # Step 5: Get or create validation definition
+    val_def = get_or_create_validation_definition(batch_definition, suite, params)
+    
+    print(f"Registered: {params['datasource_name']} / {params['dataasset_name']}")
+    print(f"Validation Definition: {val_def.name}")
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# #### Step 2: Configure params and Expectations for each dataset
+
+# MARKDOWN ********************
+
+# **Registering the Marketing Channels Gold Table:**
+
+# CELL ********************
+
+channels_params = {
+    "datasource_name": "lh_int_gold", 
+    "dataasset_name":"marketing_channels"
+}
+
+channels_expectations_list = [  
+    gxe.ExpectColumnValuesToBeInSet(column="channel_surrogate_id", value_set=[1]),
+    gxe.ExpectColumnValuesToBeIncreasing(column="channel_total_views")
+]
+
+
+register_any_datasource(type='spark_df', params=channels_params, expectations_list=channels_expectations_list)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# **Registering the Marketing Assets Gold Table:**
+
+# CELL ********************
+
+assets_params = {
+    "datasource_name": "lh_int_gold", 
+    "dataasset_name":"marketing_assets"
+}
+
+assets_expectations_list = [
+    gxe.ExpectColumnValuesToBeUnique(column="asset_surrogate_id"), 
+    gxe.ExpectColumnValuesToNotBeNull(column="asset_natural_id"),
+    gxe.ExpectColumnValuesToNotBeNull(column="asset_published_date"), 
+    gxe.ExpectCompoundColumnsToBeUnique(column_list=["asset_title", "asset_surrogate_id"])
+]
+
+register_any_datasource(type='spark_df', params=assets_params, expectations_list=assets_expectations_list)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# **Registering the Marketing Asset Stats Gold Table:**
+
+# CELL ********************
+
+asset_stats_params = {
+    "datasource_name": "lh_int_gold", 
+    "dataasset_name":"marketing_asset_stats"
+}
+
+asset_stats_expectations_list = [
+    gxe.ExpectColumnValuesToBeNull(column="asset_total_impressions")
+]
+
+
+register_any_datasource(type='spark_df', params=asset_stats_params, expectations_list=asset_stats_expectations_list)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+context
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
