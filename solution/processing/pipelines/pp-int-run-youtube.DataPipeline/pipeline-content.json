@@ -152,6 +152,35 @@
             "type": "Expression"
           }
         }
+      },
+      {
+        "name": "Run 4 Validate Model Notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "Run 3 Model Notebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.vlintvariables__4_VALIDATE_NOTEBOOK_ID",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
+            "type": "Expression"
+          }
+        }
       }
     ],
     "parameters": {
