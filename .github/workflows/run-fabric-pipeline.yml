@@ -61,10 +61,15 @@ jobs:
         id: pipeline
         run: |
           PIPELINE_ID="${{ inputs.pipeline_id || vars.PIPELINE_ITEM_ID }}"
+          echo "Pipeline ID: $PIPELINE_ID"
+          echo "Workspace ID: ${{ vars.WORKSPACE_ID }}"
 
           RESPONSE=$(curl -s -i -X POST "https://api.fabric.microsoft.com/v1/workspaces/${{ vars.WORKSPACE_ID }}/items/${PIPELINE_ID}/jobs/instances?jobType=Pipeline" \
             -H "Authorization: Bearer ${{ steps.auth.outputs.FABRIC_TOKEN }}" \
             -H "Content-Type: application/json")
+
+          echo "Response:"
+          echo "$RESPONSE"
 
           echo "$RESPONSE" | head -1 | grep -q "202" || (echo "Failed to trigger pipeline" && exit 1)
 
