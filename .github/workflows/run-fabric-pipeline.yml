@@ -38,6 +38,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install ms-fabric-cli==1.2.0
 
+      - name: Configure Fabric CLI for CI/CD
+        run: |
+          fab config set encryption_fallback_enabled true
+
       - name: Authenticate to Fabric
         run: |
           fab auth login -u ${{ secrets.SPN_CLIENT_ID }} -p ${{ secrets.SPN_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
@@ -235,6 +239,7 @@ jobs:
           echo "Suspending Fabric Capacity to avoid costs..."
 
           # Re-authenticate in case token expired during long pipeline run
+          fab config set encryption_fallback_enabled true
           fab auth login -u ${{ secrets.SPN_CLIENT_ID }} -p ${{ secrets.SPN_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }} || true
 
           ENDPOINT="subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}/suspend?api-version=2023-11-01"
