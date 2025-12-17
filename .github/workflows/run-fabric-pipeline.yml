@@ -86,12 +86,14 @@ jobs:
             ELAPSED=$(($(date +%s) - START))
             [ $ELAPSED -ge $PIPELINE_TIMEOUT ] && echo "Timeout" && exit 1
 
-            STATUS=$(curl -s "$URL" -H "Authorization: Bearer ${{ steps.auth.outputs.FABRIC_TOKEN }}" | grep -oP '"status"\s*:\s*"\K[^"]+')
+            RESPONSE=$(curl -s "$URL" -H "Authorization: Bearer ${{ steps.auth.outputs.FABRIC_TOKEN }}")
+            # Get only the first status field (top-level job status, not nested activity statuses)
+            STATUS=$(echo "$RESPONSE" | grep -oP '"status"\s*:\s*"\K[^"]+' | head -1)
             echo "Status: $STATUS (${ELAPSED}s)"
 
             case "$STATUS" in
-              Completed|Deduped) exit 0 ;;
-              Failed|Cancelled) exit 1 ;;
+              Completed|Deduped) echo "Pipeline finished successfully"; exit 0 ;;
+              Failed|Cancelled) echo "Pipeline failed"; exit 1 ;;
               *) sleep 60 ;;
             esac
           done
