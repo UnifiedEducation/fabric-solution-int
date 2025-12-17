@@ -20,19 +20,27 @@
     },
     {
       "name": "_0_INGEST_NOTEBOOK_ID",
-      "value": ""
+      "value": "08465a4b-8312-4c02-9dde-dcf6916fc2ad"
     },
     {
       "name": "_1_LOAD_NOTEBOOK_ID",
-      "value": ""
+      "value": "2c0db417-fa86-41f5-a029-5213b669cc06"
     },
     {
       "name": "_2_CLEAN_NOTEBOOK_ID",
-      "value": ""
+      "value": "04227847-51b6-4cfd-b83c-bf49ed6dc001"
     },
     {
       "name": "_3_MODEL_NOTEBOOK_ID",
-      "value": ""
+      "value": "12f1eebb-83f4-41fd-8146-a6e1a8df815f"
+    },
+    {
+      "name": "_4_VALIDATE_NOTEBOOK_ID",
+      "value": "1c571a79-8c9b-412c-a2af-b800162bc7ca"
+    },
+    {
+      "name": "LHCREATE_ALL_NOTEBOOK_ID",
+      "value": "1a2b2a41-c6e7-4565-bf6d-b8c94c8c84df"
     }
   ]
 }
