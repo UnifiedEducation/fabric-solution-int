@@ -1,4 +1,4 @@
-name: Run Fabric Pipeline with Capacity Management
+name: Run Fabric Pipeline
 
 on:
   schedule:
@@ -6,270 +6,99 @@ on:
   workflow_dispatch:
     inputs:
       pipeline_id:
-        description: 'Pipeline Item ID to execute (leave empty to use default)'
+        description: 'Pipeline Item ID (leave empty for default)'
         required: false
         type: string
 
 env:
-  # Polling configuration
-  CAPACITY_POLL_INTERVAL: 30      # seconds between capacity status checks
-  CAPACITY_MAX_WAIT: 600          # max seconds to wait for capacity resume (10 min)
-  PIPELINE_POLL_INTERVAL: 60      # seconds between pipeline status checks
-  PIPELINE_MAX_WAIT: 7200         # max seconds to wait for pipeline completion (2 hours)
+  POLL_INTERVAL: 30
+  CAPACITY_TIMEOUT: 600
+  PIPELINE_TIMEOUT: 7200
 
 jobs:
-  run-fabric-pipeline:
+  run-pipeline:
     runs-on: ubuntu-latest
-
     steps:
-      # ============================================
-      # SETUP PHASE
-      # ============================================
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Fabric CLI
+      - name: Get Access Tokens
+        id: auth
         run: |
-          python -m pip install --upgrade pip
-          pip install ms-fabric-cli==1.2.0
+          # Fabric API token
+          FABRIC_TOKEN=$(curl -s -X POST "https://login.microsoftonline.com/${{ secrets.AZURE_TENANT_ID }}/oauth2/v2.0/token" \
+            -d "client_id=${{ secrets.SPN_CLIENT_ID }}&client_secret=${{ secrets.SPN_CLIENT_SECRET }}&scope=https://api.fabric.microsoft.com/.default&grant_type=client_credentials" \
+            | grep -oP '"access_token"\s*:\s*"\K[^"]+')
 
-      - name: Configure Fabric CLI for CI/CD
+          # Azure Management API token
+          AZURE_TOKEN=$(curl -s -X POST "https://login.microsoftonline.com/${{ secrets.AZURE_TENANT_ID }}/oauth2/v2.0/token" \
+            -d "client_id=${{ secrets.SPN_CLIENT_ID }}&client_secret=${{ secrets.SPN_CLIENT_SECRET }}&scope=https://management.azure.com/.default&grant_type=client_credentials" \
+            | grep -oP '"access_token"\s*:\s*"\K[^"]+')
+
+          echo "FABRIC_TOKEN=$FABRIC_TOKEN" >> $GITHUB_OUTPUT
+          echo "AZURE_TOKEN=$AZURE_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Resume Capacity
         run: |
-          fab config set encryption_fallback_enabled true
+          curl -s -X POST "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}/resume?api-version=2023-11-01" \
+            -H "Authorization: Bearer ${{ steps.auth.outputs.AZURE_TOKEN }}" \
+            -H "Content-Type: application/json"
 
-      - name: Authenticate to Fabric
+      - name: Wait for Capacity
         run: |
-          fab auth login -u ${{ secrets.SPN_CLIENT_ID }} -p ${{ secrets.SPN_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
-
-      - name: Set Pipeline ID
-        id: set-pipeline-id
-        run: |
-          if [ -n "${{ inputs.pipeline_id }}" ]; then
-            echo "PIPELINE_ID=${{ inputs.pipeline_id }}" >> $GITHUB_OUTPUT
-            echo "Using input pipeline ID: ${{ inputs.pipeline_id }}"
-          else
-            echo "PIPELINE_ID=${{ vars.PIPELINE_ITEM_ID }}" >> $GITHUB_OUTPUT
-            echo "Using default pipeline ID: ${{ vars.PIPELINE_ITEM_ID }}"
-          fi
-
-      # ============================================
-      # RESUME CAPACITY PHASE
-      # ============================================
-      - name: Resume Fabric Capacity
-        id: resume-capacity
-        run: |
-          echo "Resuming Fabric Capacity: ${{ vars.CAPACITY_NAME }}"
-
-          ENDPOINT="subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}/resume?api-version=2023-11-01"
-
-          # Execute resume API call
-          RESPONSE=$(fab api -A azure -X post "$ENDPOINT" 2>&1) || true
-
-          echo "Resume response: $RESPONSE"
-
-          # Check if successful (200 immediate or 202 async)
-          if echo "$RESPONSE" | grep -qE "200|202|provisioningState|error.*AlreadyStarted"; then
-            echo "Capacity resume initiated successfully"
-            echo "RESUME_INITIATED=true" >> $GITHUB_OUTPUT
-          else
-            echo "::warning::Unexpected response from resume API: $RESPONSE"
-            echo "RESUME_INITIATED=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Wait for Capacity to be Ready
-        id: wait-capacity
-        run: |
-          echo "Waiting for capacity to become active..."
-
-          ENDPOINT="subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}?api-version=2023-11-01"
-
-          START_TIME=$(date +%s)
-          READY=false
+          URL="https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}?api-version=2023-11-01"
+          START=$(date +%s)
 
           while true; do
-            CURRENT_TIME=$(date +%s)
-            ELAPSED=$((CURRENT_TIME - START_TIME))
+            ELAPSED=$(($(date +%s) - START))
+            [ $ELAPSED -ge $CAPACITY_TIMEOUT ] && echo "Timeout" && exit 1
 
-            if [ $ELAPSED -ge ${{ env.CAPACITY_MAX_WAIT }} ]; then
-              echo "::error::Timeout waiting for capacity to resume after ${ELAPSED} seconds"
-              exit 1
-            fi
+            STATUS=$(curl -s "$URL" -H "Authorization: Bearer ${{ steps.auth.outputs.AZURE_TOKEN }}")
+            echo "$STATUS" | grep -q '"state".*"Active"' && echo "Capacity Active" && break
 
-            # Get capacity status
-            STATUS_RESPONSE=$(fab api -A azure -X get "$ENDPOINT" 2>&1) || true
-
-            # Check for Active state
-            if echo "$STATUS_RESPONSE" | grep -q '"state".*"Active"'; then
-              echo "Capacity is now Active!"
-              READY=true
-              break
-            fi
-
-            echo "Capacity not ready yet. Elapsed: ${ELAPSED}s. Waiting ${{ env.CAPACITY_POLL_INTERVAL }}s..."
-            sleep ${{ env.CAPACITY_POLL_INTERVAL }}
+            echo "Waiting... (${ELAPSED}s)"
+            sleep $POLL_INTERVAL
           done
 
-          if [ "$READY" = "true" ]; then
-            echo "CAPACITY_READY=true" >> $GITHUB_OUTPUT
-          else
-            echo "CAPACITY_READY=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-      # ============================================
-      # EXECUTE PIPELINE PHASE
-      # ============================================
-      - name: Run Fabric Pipeline
-        id: run-pipeline
+      - name: Run Pipeline
+        id: pipeline
         run: |
-          echo "Starting pipeline execution..."
+          PIPELINE_ID="${{ inputs.pipeline_id || vars.PIPELINE_ITEM_ID }}"
 
-          PIPELINE_ID="${{ steps.set-pipeline-id.outputs.PIPELINE_ID }}"
-          WORKSPACE_ID="${{ vars.WORKSPACE_ID }}"
+          RESPONSE=$(curl -s -i -X POST "https://api.fabric.microsoft.com/v1/workspaces/${{ vars.WORKSPACE_ID }}/items/${PIPELINE_ID}/jobs/instances?jobType=Pipeline" \
+            -H "Authorization: Bearer ${{ steps.auth.outputs.FABRIC_TOKEN }}" \
+            -H "Content-Type: application/json")
 
-          ENDPOINT="workspaces/${WORKSPACE_ID}/items/${PIPELINE_ID}/jobs/instances?jobType=Pipeline"
+          echo "$RESPONSE" | head -1 | grep -q "202" || (echo "Failed to trigger pipeline" && exit 1)
 
-          echo "Calling: $ENDPOINT"
+          JOB_ID=$(echo "$RESPONSE" | grep -i "^location:" | grep -oP '[a-f0-9-]{36}$' | tr -d '\r')
+          echo "JOB_ID=$JOB_ID" >> $GITHUB_OUTPUT
+          echo "PIPELINE_ID=$PIPELINE_ID" >> $GITHUB_OUTPUT
 
-          # Execute pipeline
-          RESPONSE=$(fab api -X post "$ENDPOINT" 2>&1) || true
-
-          echo "Pipeline trigger response: $RESPONSE"
-
-          # Extract job instance ID from response
-          # The response should contain the job instance ID
-          JOB_INSTANCE_ID=$(echo "$RESPONSE" | grep -oP '"id"\s*:\s*"\K[a-f0-9-]+' | head -1)
-
-          if [ -n "$JOB_INSTANCE_ID" ]; then
-            echo "Job Instance ID: $JOB_INSTANCE_ID"
-            echo "JOB_INSTANCE_ID=$JOB_INSTANCE_ID" >> $GITHUB_OUTPUT
-            echo "PIPELINE_STARTED=true" >> $GITHUB_OUTPUT
-          else
-            echo "::error::Failed to extract job instance ID from response"
-            echo "Response was: $RESPONSE"
-            exit 1
-          fi
-
-      - name: Wait for Pipeline Completion
-        id: wait-pipeline
+      - name: Wait for Pipeline
         run: |
-          echo "Monitoring pipeline execution..."
-
-          JOB_INSTANCE_ID="${{ steps.run-pipeline.outputs.JOB_INSTANCE_ID }}"
-          PIPELINE_ID="${{ steps.set-pipeline-id.outputs.PIPELINE_ID }}"
-          WORKSPACE_ID="${{ vars.WORKSPACE_ID }}"
-
-          ENDPOINT="workspaces/${WORKSPACE_ID}/items/${PIPELINE_ID}/jobs/instances/${JOB_INSTANCE_ID}"
-
-          START_TIME=$(date +%s)
-          FINAL_STATUS=""
+          URL="https://api.fabric.microsoft.com/v1/workspaces/${{ vars.WORKSPACE_ID }}/items/${{ steps.pipeline.outputs.PIPELINE_ID }}/jobs/instances/${{ steps.pipeline.outputs.JOB_ID }}"
+          START=$(date +%s)
 
           while true; do
-            CURRENT_TIME=$(date +%s)
-            ELAPSED=$((CURRENT_TIME - START_TIME))
+            ELAPSED=$(($(date +%s) - START))
+            [ $ELAPSED -ge $PIPELINE_TIMEOUT ] && echo "Timeout" && exit 1
 
-            if [ $ELAPSED -ge ${{ env.PIPELINE_MAX_WAIT }} ]; then
-              echo "::error::Timeout waiting for pipeline completion after ${ELAPSED} seconds"
-              FINAL_STATUS="Timeout"
-              break
-            fi
-
-            # Get job status
-            STATUS_RESPONSE=$(fab api -X get "$ENDPOINT" 2>&1) || true
-
-            # Extract status from response
-            STATUS=$(echo "$STATUS_RESPONSE" | grep -oP '"status"\s*:\s*"\K[^"]+' | head -1)
-
-            echo "Current status: $STATUS (Elapsed: ${ELAPSED}s)"
+            STATUS=$(curl -s "$URL" -H "Authorization: Bearer ${{ steps.auth.outputs.FABRIC_TOKEN }}" | grep -oP '"status"\s*:\s*"\K[^"]+')
+            echo "Status: $STATUS (${ELAPSED}s)"
 
             case "$STATUS" in
-              "Completed")
-                echo "Pipeline completed successfully!"
-                FINAL_STATUS="Completed"
-                break
-                ;;
-              "Failed")
-                echo "::error::Pipeline execution failed!"
-                FAILURE_REASON=$(echo "$STATUS_RESPONSE" | grep -oP '"failureReason"\s*:\s*"\K[^"]+' | head -1)
-                if [ -n "$FAILURE_REASON" ]; then
-                  echo "Failure reason: $FAILURE_REASON"
-                fi
-                FINAL_STATUS="Failed"
-                break
-                ;;
-              "Cancelled")
-                echo "::error::Pipeline was cancelled!"
-                FINAL_STATUS="Cancelled"
-                break
-                ;;
-              "Deduped")
-                echo "::warning::Pipeline was deduped (skipped due to existing run)"
-                FINAL_STATUS="Deduped"
-                break
-                ;;
-              "NotStarted"|"InProgress")
-                echo "Pipeline still running. Waiting ${{ env.PIPELINE_POLL_INTERVAL }}s..."
-                sleep ${{ env.PIPELINE_POLL_INTERVAL }}
-                ;;
-              *)
-                echo "::warning::Unknown status: $STATUS"
-                sleep ${{ env.PIPELINE_POLL_INTERVAL }}
-                ;;
+              Completed|Deduped) exit 0 ;;
+              Failed|Cancelled) exit 1 ;;
+              *) sleep 60 ;;
             esac
           done
 
-          echo "FINAL_STATUS=$FINAL_STATUS" >> $GITHUB_OUTPUT
-
-          if [ "$FINAL_STATUS" != "Completed" ] && [ "$FINAL_STATUS" != "Deduped" ]; then
-            echo "::error::Pipeline did not complete successfully. Final status: $FINAL_STATUS"
-            exit 1
-          fi
-
-      # ============================================
-      # CLEANUP PHASE (ALWAYS RUNS)
-      # ============================================
-      - name: Suspend Fabric Capacity
+      - name: Suspend Capacity
         if: always()
         run: |
-          echo "Suspending Fabric Capacity to avoid costs..."
+          # Get fresh token
+          TOKEN=$(curl -s -X POST "https://login.microsoftonline.com/${{ secrets.AZURE_TENANT_ID }}/oauth2/v2.0/token" \
+            -d "client_id=${{ secrets.SPN_CLIENT_ID }}&client_secret=${{ secrets.SPN_CLIENT_SECRET }}&scope=https://management.azure.com/.default&grant_type=client_credentials" \
+            | grep -oP '"access_token"\s*:\s*"\K[^"]+')
 
-          # Re-authenticate in case token expired during long pipeline run
-          fab config set encryption_fallback_enabled true
-          fab auth login -u ${{ secrets.SPN_CLIENT_ID }} -p ${{ secrets.SPN_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }} || true
-
-          ENDPOINT="subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}/suspend?api-version=2023-11-01"
-
-          # Execute suspend API call
-          RESPONSE=$(fab api -A azure -X post "$ENDPOINT" 2>&1) || true
-
-          echo "Suspend response: $RESPONSE"
-
-          # Log result but don't fail the workflow if suspend fails
-          if echo "$RESPONSE" | grep -qE "200|202"; then
-            echo "Capacity suspend initiated successfully"
-          else
-            echo "::warning::Suspend may have encountered an issue: $RESPONSE"
-          fi
-
-      - name: Workflow Summary
-        if: always()
-        run: |
-          echo "## Fabric Pipeline Execution Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Capacity Resume | ${{ steps.resume-capacity.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Capacity Ready | ${{ steps.wait-capacity.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Pipeline Trigger | ${{ steps.run-pipeline.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Pipeline Completion | ${{ steps.wait-pipeline.outcome }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Details" >> $GITHUB_STEP_SUMMARY
-          echo "- **Pipeline ID:** ${{ steps.set-pipeline-id.outputs.PIPELINE_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Job Instance ID:** ${{ steps.run-pipeline.outputs.JOB_INSTANCE_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Final Status:** ${{ steps.wait-pipeline.outputs.FINAL_STATUS }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Capacity:** ${{ vars.CAPACITY_NAME }}" >> $GITHUB_STEP_SUMMARY
+          curl -s -X POST "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}/suspend?api-version=2023-11-01" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json"
