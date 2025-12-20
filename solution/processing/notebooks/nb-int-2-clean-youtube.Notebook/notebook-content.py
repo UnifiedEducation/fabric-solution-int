@@ -58,18 +58,18 @@ layer_mapping = {
     "gold": variables.GOLD_LH_NAME 
 }
 
-def construct_abfs_path(layer = "bronze"): 
-    """Constructs a base ABFS path of a Lakehouse, for a given 'layer': ["bronze", "silver", "gold"]
-    his can be used to read and write files and tables to/ from a Lakehouse. 
-    Reads from the Variable Library. 
+def construct_abfs_path(layer="bronze"):
+    """Construct base ABFS path for a Lakehouse layer.
+
+    Args:
+        layer: One of "bronze", "silver", or "gold".
+
+    Returns:
+        str: Full ABFS base path for the specified Lakehouse.
     """
-    
     ws_name = variables.LH_WORKSPACE_NAME
-
-    lh_name = layer_mapping.get(layer) 
-
+    lh_name = layer_mapping.get(layer)
     base_abfs_path = f"abfss://{ws_name}@onelake.dfs.fabric.microsoft.com/{lh_name}.Lakehouse/"
-    
     return base_abfs_path
 
 bronze_lh_base_path = construct_abfs_path("bronze")
@@ -86,24 +86,39 @@ silver_lh_base_path = construct_abfs_path("silver")
 
 # CELL ********************
 
-def read_table_to_dataframe(base_abfs_path, schema, table_name): 
-    
+def read_table_to_dataframe(base_abfs_path, schema, table_name):
+    """Read a Delta table into a Spark DataFrame.
+
+    Args:
+        base_abfs_path: Base ABFS path for the Lakehouse.
+        schema: Schema name containing the table.
+        table_name: Name of the table to read.
+
+    Returns:
+        DataFrame: Spark DataFrame with the table contents.
+    """
     full_path = f"{base_abfs_path}Tables/{schema}/{table_name}"
-    
     return spark.read.format("delta").load(full_path)
 
-def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_function): 
-    
-    # add on the full-path to the table
-    full_write_path = f"{base_abfs_path}Tables/{schema}/{table_name}"
 
+def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_function):
+    """Merge a DataFrame into an existing Delta table.
+
+    Args:
+        df: Source Spark DataFrame to merge.
+        base_abfs_path: Base ABFS path for the Lakehouse.
+        schema: Schema name containing the table.
+        table_name: Target table name.
+        matching_function: SQL expression for merge matching.
+    """
+    full_write_path = f"{base_abfs_path}Tables/{schema}/{table_name}"
     delta_table = DeltaTable.forPath(spark, full_write_path)
 
     (
         delta_table.alias("target")
         .merge(df.alias("source"), matching_function)
         .whenMatchedUpdateAll()
-        .whenNotMatchedInsertAll() 
+        .whenNotMatchedInsertAll()
         .execute()
     )
     
@@ -277,7 +292,7 @@ df_clean = (
 
 matching_func = "target.video_id = source.video_id"
 
-write_dataframe_to_table(df, silver_lh_base_path, "youtube", "video_statistics", matching_func)
+write_dataframe_to_table(df_clean, silver_lh_base_path, "youtube", "video_statistics", matching_func)
 
 # METADATA ********************
 

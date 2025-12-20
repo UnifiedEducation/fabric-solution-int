@@ -51,23 +51,29 @@ variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
 
 # CELL ********************
 
-def construct_abfs_path(): 
-    """Constructs a base ABFS path of a Lakehouse. This can be used to read and writes 
-    files and tables to/ from the Lakehouse. 
-    Reads from the Variable Library. 
+def construct_abfs_path():
+    """Construct base ABFS path for the Bronze Lakehouse.
+
+    Returns:
+        str: Full ABFS base path for the Bronze Lakehouse.
     """
-    
-    # 'variables' is the values from the Variable Library 
     ws_name = variables.LH_WORKSPACE_NAME
     lh_name = variables.BRONZE_LH_NAME
-
     base_abfs_path = f"abfss://{ws_name}@onelake.dfs.fabric.microsoft.com/{lh_name}.Lakehouse/"
-    
     return base_abfs_path
- 
-def get_most_recent_file(channel_path): 
-    base_abfs_path = construct_abfs_path() 
-    full_file_path = f"{base_abfs_path}{channel_path}"
+
+
+def get_most_recent_file(file_path):
+    """Get the most recently modified file from a directory.
+
+    Args:
+        file_path: Relative path to the directory within the Lakehouse.
+
+    Returns:
+        FileInfo: The most recently modified file object.
+    """
+    base_abfs_path = construct_abfs_path()
+    full_file_path = f"{base_abfs_path}{file_path}"
     files = notebookutils.fs.ls(full_file_path)
     most_recent_file = max(files, key=lambda file: file.modifyTime)
     return most_recent_file 
@@ -98,15 +104,18 @@ most_recent_file = get_most_recent_file(channel_path)
 
 # CELL ********************
 
-def flatten_channel_json_to_df(most_recent_file): 
+def flatten_channel_json_to_df(most_recent_file):
+    """Flatten raw channel JSON into a structured DataFrame.
 
-    # read raw json into raw_df 
+    Args:
+        most_recent_file: FileInfo object pointing to the JSON file.
+
+    Returns:
+        DataFrame: Flattened channel data with selected columns.
+    """
     raw_df = spark.read.option("multiLine", "true").json(most_recent_file.path)
-
-    #explore the items array
     df_channels = raw_df.select(explode(col("items")).alias("item"))
 
-    # cherrypick the properties we need
     df_final = df_channels.select(
         col("item.id").alias("channel_id"),
         col("item.snippet.title").alias("channel_name"),
@@ -116,7 +125,6 @@ def flatten_channel_json_to_df(most_recent_file):
         col("item.statistics.videoCount").cast("int").alias("video_count"),
         current_timestamp().alias("loading_TS")
     )
-
     return df_final
 
 bronze_df_channel = flatten_channel_json_to_df(most_recent_file)
@@ -175,12 +183,17 @@ most_recent_file = get_most_recent_file(channel_path)
 
 # CELL ********************
 
-def flatten_playlistItems_json_to_df(most_recent_file): 
+def flatten_playlistItems_json_to_df(most_recent_file):
+    """Flatten raw playlist items JSON into a structured DataFrame.
 
-    # read raw json into raw_df 
+    Args:
+        most_recent_file: FileInfo object pointing to the JSON file.
+
+    Returns:
+        DataFrame: Flattened playlist items with video metadata.
+    """
     raw_df = spark.read.option("multiLine", "true").json(most_recent_file.path)
 
-    # Select and flatten to your desired structure
     df_final = raw_df.select(
         col("snippet.channelId").alias("channel_id"),
         col("snippet.resourceId.videoId").alias("video_id"),
@@ -190,7 +203,6 @@ def flatten_playlistItems_json_to_df(most_recent_file):
         to_timestamp(col("snippet.publishedAt")).alias("video_publish_TS"),
         current_timestamp().alias("loading_TS")
     )
-
     return df_final
 
 bronze_df_playlist_items = flatten_playlistItems_json_to_df(most_recent_file)
@@ -248,20 +260,24 @@ most_recent_file = get_most_recent_file(channel_path)
 
 # CELL ********************
 
-def flatten_videostats_json_to_df(most_recent_file): 
+def flatten_videostats_json_to_df(most_recent_file):
+    """Flatten raw video statistics JSON into a structured DataFrame.
 
-    # Read the JSON file
-    df = spark.read.option("multiLine", "true").json(most_recent_file.path)
+    Args:
+        most_recent_file: FileInfo object pointing to the JSON file.
 
-    # Select and flatten to your desired structure
-    df_final = df.select(
+    Returns:
+        DataFrame: Flattened video statistics with view/like/comment counts.
+    """
+    raw_df = spark.read.option("multiLine", "true").json(most_recent_file.path)
+
+    df_final = raw_df.select(
         col("id").alias("video_id"),
         col("statistics.viewCount").cast("int").alias("video_view_count"),
         col("statistics.likeCount").cast("int").alias("video_like_count"),
         col("statistics.commentCount").cast("int").alias("video_comment_count"),
         current_timestamp().alias("loading_TS")
     )
-
     return df_final
 
 bronze_df_videos = flatten_videostats_json_to_df(most_recent_file)

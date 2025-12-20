@@ -56,24 +56,25 @@ variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
 
 # Define a few helper functions
 
-def construct_abfs_path(layer = "bronze"): 
-    """Constructs a base ABFS path of a Lakehouse, for a given 'layer': ["bronze", "silver", "gold"]
-    This can be used to read and write files and tables to/ from a Lakehouse. 
-    Reads from the Variable Library. 
-    """
+def construct_abfs_path(layer="bronze"):
+    """Construct base ABFS path for a Lakehouse layer.
 
+    Args:
+        layer: One of "bronze", "silver", or "gold".
+
+    Returns:
+        str: Full ABFS base path for the specified Lakehouse.
+    """
     ws_name = variables.LH_WORKSPACE_NAME
-    
+
     layer_mapping = {
         "bronze": variables.BRONZE_LH_NAME,
         "silver": variables.SILVER_LH_NAME,
-        "gold": variables.GOLD_LH_NAME 
+        "gold": variables.GOLD_LH_NAME
     }
 
-    lh_name = layer_mapping.get(layer) 
-
+    lh_name = layer_mapping.get(layer)
     base_abfs_path = f"abfss://{ws_name}@onelake.dfs.fabric.microsoft.com/{lh_name}.Lakehouse/"
-    
     return base_abfs_path
 
 
@@ -93,33 +94,39 @@ gold_lh_base_path = construct_abfs_path("gold")
 
 # CELL ********************
 
-def read_table_to_dataframe(base_abfs_path, schema, table_name): 
-    """Constructs a full ABFS path (from inputs params), 
-    and reads the Delta table into a Spark Dataframe
-    """ 
-    
+def read_table_to_dataframe(base_abfs_path, schema, table_name):
+    """Read a Delta table into a Spark DataFrame.
+
+    Args:
+        base_abfs_path: Base ABFS path for the Lakehouse.
+        schema: Schema name containing the table.
+        table_name: Name of the table to read.
+
+    Returns:
+        DataFrame: Spark DataFrame with the table contents.
+    """
     full_path = f"{base_abfs_path}Tables/{schema}/{table_name}"
-    
     return spark.read.format("delta").load(full_path)
 
-def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_function): 
-    """Constructs a full ABFS path (from inputs params), 
-    and write the provided Dataframe into the location, using a basic merge
-    (with the provided matching function). 
 
+def write_dataframe_to_table(df, base_abfs_path, schema, table_name, matching_function):
+    """Merge a DataFrame into an existing Delta table.
+
+    Args:
+        df: Source Spark DataFrame to merge.
+        base_abfs_path: Base ABFS path for the Lakehouse.
+        schema: Schema name containing the table.
+        table_name: Target table name.
+        matching_function: SQL expression for merge matching.
     """
-    
     full_write_path = f"{base_abfs_path}Tables/{schema}/{table_name}"
-
-    # get the target table
     delta_table = DeltaTable.forPath(spark, full_write_path)
 
-    # merge the dataframe into the target table (on the matching condition)
     (
         delta_table.alias("target")
         .merge(df.alias("source"), matching_function)
         .whenMatchedUpdateAll()
-        .whenNotMatchedInsertAll() 
+        .whenNotMatchedInsertAll()
         .execute()
     )
     

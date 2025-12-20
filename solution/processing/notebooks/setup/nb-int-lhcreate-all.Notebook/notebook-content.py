@@ -176,13 +176,11 @@ LAKEHOUSE_METADATA = {
 # CELL ********************
 
 def create_lakehouse_objects(lakehouse_config):
-    """
-    Creates schemas and tables for a lakehouse based on configuration.
-    
+    """Create schemas and tables for a lakehouse based on configuration.
+
     Args:
-        lakehouse_config: Dictionary containing lakehouse metadata
+        lakehouse_config: Dict with keys "name_variable", "schemas", and "tables".
     """
-    # Get lakehouse name from variables
     lh_name = getattr(variables, lakehouse_config["name_variable"])
     
     # Create schemas

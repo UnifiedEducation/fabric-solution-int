@@ -74,39 +74,48 @@ variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
 
 # CELL ********************
 
-def get_data_from_endpoint(BASE_URL, base_params, additional_params = ""): 
-    """Construct a GET request and return the JSON results"""
-    
+def get_data_from_endpoint(base_url, base_params, additional_params=""):
+    """Construct a GET request to YouTube API and return JSON results.
+
+    Args:
+        base_url: The YouTube API endpoint URL.
+        base_params: Base query parameters for the request.
+        additional_params: Optional additional query parameters.
+
+    Returns:
+        dict: JSON response from the API.
+    """
     params = base_params + additional_params
-
-    full_URI = f'{BASE_URL}?key={api_key}&{params}'
-
-    response = requests.get(full_URI) 
-
+    full_uri = f'{base_url}?key={api_key}&{params}'
+    response = requests.get(full_uri)
     json_data = response.json()
-
     return json_data
 
-def get_data_with_pagination(BASE_URL, base_params, additional_params = ""):
-    """Construct a GET request and return the JSON results, with Pagination"""
+def get_data_with_pagination(base_url, base_params, additional_params=""):
+    """Fetch all pages of results from a paginated YouTube API endpoint.
+
+    Args:
+        base_url: The YouTube API endpoint URL.
+        base_params: Base query parameters for the request.
+        additional_params: Optional additional query parameters.
+
+    Returns:
+        list: All items collected across all pages.
+    """
     all_items = []
     next_page_token = None
-    params = base_params + additional_params
 
     while True:
         if next_page_token:
             additional_params_plus_token = additional_params + f'&pageToken={next_page_token}'
-        else: 
+        else:
             additional_params_plus_token = additional_params
-        
-        json_data = get_data_from_endpoint(BASE_URL, base_params, additional_params_plus_token)
 
-        json_data_items = json_data.get("items", {})
-        
+        json_data = get_data_from_endpoint(base_url, base_params, additional_params_plus_token)
+        json_data_items = json_data.get("items", [])
         all_items.extend(json_data_items)
-
         next_page_token = json_data.get('nextPageToken', None)
-                
+
         if not next_page_token:
             break
 
@@ -114,30 +123,34 @@ def get_data_with_pagination(BASE_URL, base_params, additional_params = ""):
     return all_items
 
 
-def construct_abfs_write_path(write_location): 
-    """Constructs an ABFS path to write RAW JSON files into a Lakehouse
-    It uses variables (from the Variable Library), that the path is dynamic across deployment environments
+def construct_abfs_write_path(write_location, entity_id):
+    """Construct an ABFS path for writing RAW JSON files to a Lakehouse.
+
+    Args:
+        write_location: Subfolder path within the Files area.
+        entity_id: Identifier for the data entity (used in filename).
+
+    Returns:
+        str: Full ABFS path for writing the JSON file.
     """
-    
-    # 'variables' is the values from the Variable Library 
     ws_name = variables.LH_WORKSPACE_NAME
     lh_name = variables.BRONZE_LH_NAME
-
     formatted_date = datetime.now().strftime("%Y%m%d")
-
-    file_name = f"{formatted_date}-{id}.json" 
-
+    file_name = f"{formatted_date}-{entity_id}.json"
     abfs_path = f"abfss://{ws_name}@onelake.dfs.fabric.microsoft.com/{lh_name}.Lakehouse/Files/{write_location}{file_name}"
-    
     return abfs_path
 
-def write_json_to_location(json_data, location, id):  
-    """Write JSON files to RAW Lakehouse area"""
 
-    abfs_path = construct_abfs_write_path(location)
+def write_json_to_location(json_data, location, entity_id):
+    """Write JSON data to RAW Lakehouse area.
 
+    Args:
+        json_data: Data to write (will be serialized to JSON).
+        location: Subfolder path within the Files area.
+        entity_id: Identifier for the data entity.
+    """
+    abfs_path = construct_abfs_write_path(location, entity_id)
     json_string = json.dumps(json_data, indent=2)
-
     notebookutils.fs.put(abfs_path, json_string, overwrite=True)
         
  
@@ -214,13 +227,11 @@ api_key = get_secret_from_akv()
 
 # CELL ********************
 
-id = 'yt-channels'
+entity_id = 'yt-channels'
+entity_metadata = METADATA.get(entity_id)
 
-md = METADATA.get(id)
-
-channel_json_data = get_data_from_endpoint(md["base_url"], md["base_params"])
-
-write_json_to_location(channel_json_data, md["write_location"], id)
+channel_json_data = get_data_from_endpoint(entity_metadata["base_url"], entity_metadata["base_params"])
+write_json_to_location(channel_json_data, entity_metadata["write_location"], entity_id)
 
 # METADATA ********************
 
@@ -235,7 +246,15 @@ write_json_to_location(channel_json_data, md["write_location"], id)
 
 # CELL ********************
 
-def extract_uploads_playlist_id(channel_json_data): 
+def extract_uploads_playlist_id(channel_json_data):
+    """Extract the uploads playlist ID from channel data.
+
+    Args:
+        channel_json_data: JSON response from the channels API endpoint.
+
+    Returns:
+        str: The playlist ID containing all channel uploads.
+    """
     return channel_json_data.get("items")[0].get("contentDetails").get("relatedPlaylists").get("uploads")
 
 # METADATA ********************
@@ -247,17 +266,14 @@ def extract_uploads_playlist_id(channel_json_data):
 
 # CELL ********************
 
-playlist_id = extract_uploads_playlist_id(channel_json_data) 
+playlist_id = extract_uploads_playlist_id(channel_json_data)
 
-id = 'yt-playlistItems'
-
-md = METADATA.get(id)
+entity_id = 'yt-playlistItems'
+entity_metadata = METADATA.get(entity_id)
 
 additional_params = f"&playlistId={playlist_id}"
-
-playlist_json_data = get_data_with_pagination(md["base_url"], md["base_params"], additional_params)
-
-write_json_to_location(playlist_json_data, md["write_location"], id)
+playlist_json_data = get_data_with_pagination(entity_metadata["base_url"], entity_metadata["base_params"], additional_params)
+write_json_to_location(playlist_json_data, entity_metadata["write_location"], entity_id)
 
 # METADATA ********************
 
@@ -294,33 +310,34 @@ def extract_video_ids(playlist_json):
 
     return video_ids
 
-def get_video_stats_batched(metadata, video_ids):
-    """Batches long list of video_ids into smaller batches to get under the 
-    50 id maximum set by the API
+def get_video_stats_batched(entity_metadata, video_ids):
+    """Fetch video statistics in batches to stay under API limits.
 
+    Args:
+        entity_metadata: Metadata dict containing base_url and base_params.
+        video_ids: List of video IDs to fetch statistics for.
+
+    Returns:
+        list: All video statistics items from the API.
     """
-
     all_videos = []
     batch_size = 40
-    md = metadata 
-    
-    # Split into batches of {batch_size} 
+
+    # Split into batches of {batch_size}
     for i in range(0, len(video_ids), batch_size):
         batch = video_ids[i:i+batch_size]
         batch_count = (i // batch_size) + 1
         total_batches = (len(video_ids) + batch_size - 1) // batch_size
-        
+
         print(f"  Processing batch {batch_count}/{total_batches}: {len(batch)} videos...")
-        
+
         # Convert list to comma-separated string
         additional_params = f"&id={','.join(batch)}"
-
-        results = get_data_from_endpoint(md["base_url"], md["base_params"], additional_params)
-                
+        results = get_data_from_endpoint(entity_metadata["base_url"], entity_metadata["base_params"], additional_params)
         all_videos.extend(results["items"])
-    
+
     print(f"Extracted stats for {len(all_videos)} videos")
-    return  all_videos
+    return all_videos
 
 
 # METADATA ********************
@@ -332,15 +349,12 @@ def get_video_stats_batched(metadata, video_ids):
 
 # CELL ********************
 
-id = 'yt-videos'
-
-md = METADATA.get(id)
+entity_id = 'yt-videos'
+entity_metadata = METADATA.get(entity_id)
 
 video_ids = extract_video_ids(playlist_json_data)
-
-video_json_data = get_video_stats_batched(md, video_ids)
-
-write_json_to_location(video_json_data, md["write_location"], id)
+video_json_data = get_video_stats_batched(entity_metadata, video_ids)
+write_json_to_location(video_json_data, entity_metadata["write_location"], entity_id)
 
 # METADATA ********************
 
