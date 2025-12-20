@@ -51,13 +51,14 @@
 
 # CELL ********************
 
-import notebookutils
-import great_expectations as gx
-import shutil
 import os
-import pandas
-from datetime import datetime 
+from datetime import datetime
+
+import great_expectations as gx
+import pandas as pd
 from delta.tables import DeltaTable
+
+import notebookutils
 
 # METADATA ********************
 
@@ -69,13 +70,26 @@ from delta.tables import DeltaTable
 # CELL ********************
 
 def get_df_from_path(base_path, schema, table):
-    """Loads data into a dataframe, from the inputs (which come from metadata)"""
+    """Load a Delta table into a Spark DataFrame.
+
+    Args:
+        base_path: Base ABFS path for the Lakehouse.
+        schema: Schema name containing the table.
+        table: Name of the table to read.
+
+    Returns:
+        DataFrame: Spark DataFrame with the table contents.
+    """
     return spark.read.format("delta").load(f"{base_path}/Tables/{schema}/{table}")
 
 
 def log_results(results: dict, lakehouse_abfs: str) -> None:
-    """Append-only logging."""
-    
+    """Log validation results to a Delta table (append-only).
+
+    Args:
+        results: GX ValidationResult object containing test outcomes.
+        lakehouse_abfs: Full ABFS path to the validation results table.
+    """
     results_flattened = [
         {
             "validation_id": results.meta['validation_id'],
@@ -83,12 +97,12 @@ def log_results(results: dict, lakehouse_abfs: str) -> None:
             "column": result.expectation_config.kwargs.get("column", None),
             "success": result.success,
             "test_timestamp": datetime.strptime(
-                results.meta['batch_markers']['ge_load_time'], 
+                results.meta['batch_markers']['ge_load_time'],
                 "%Y%m%dT%H%M%S.%fZ"
             )
         } for result in results.results
     ]
-    
+
     pandas_df = pd.DataFrame(results_flattened)
     spark_results_df = spark.createDataFrame(pandas_df)
     spark_results_df.write.format("delta").mode("append").save(lakehouse_abfs)

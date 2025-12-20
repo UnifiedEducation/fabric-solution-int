@@ -28,8 +28,11 @@ pipeline_trigger_time = ""
 
 import json
 from datetime import datetime
-from pyspark.sql.types import StructType, StructField, StringType, LongType, TimestampType
+
 from delta.tables import DeltaTable
+from pyspark.sql.types import StructType, StructField, StringType, LongType, TimestampType
+
+import notebookutils
 
 # METADATA ********************
 
@@ -43,17 +46,15 @@ from delta.tables import DeltaTable
 variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
 
 
-def construct_abfs_path(): 
-    """Constructs a base ABFS path of a Lakehouse. This can be used to read and writes 
-    files and tables to/ from the Lakehouse. 
-    Reads from the Variable Library. 
-    """
+def construct_abfs_path():
+    """Construct base ABFS path for the Admin Lakehouse.
 
-    # 'variables' is the values from the Variable Library 
+    Returns:
+        str: Full ABFS base path for the Admin Lakehouse.
+    """
     ws_name = variables.LH_WORKSPACE_NAME
     lh_name = variables.ADMIN_LH_NAME
     base_abfs_path = f"abfss://{ws_name}@onelake.dfs.fabric.microsoft.com/{lh_name}.Lakehouse/"
-
     return base_abfs_path
 
 
