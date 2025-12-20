@@ -11,6 +11,27 @@
 
 # MARKDOWN ********************
 
+# Runtime Environment configuration: 
+
+# CELL ********************
+
+# MAGIC %%configure -f
+# MAGIC {
+# MAGIC     "environment": {
+# MAGIC         "id": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_ID)"},
+# MAGIC         "name": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_NAME)"}
+# MAGIC     }
+# MAGIC }
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
 # This notebook should be run each time you create a new workspace/ environment (for example, when developing a new feature). 
 # 
 # 1. Run Lakehouse Creation Scripts
@@ -24,7 +45,8 @@
 
 # CELL ********************
 
-%run nb-int-lhcreate-all
+import notebookutils
+notebookutils.notebook.run("nb-int-lhcreate-all")
 
 # METADATA ********************
 
@@ -42,7 +64,6 @@
 # CELL ********************
 
 import sempy.fabric as fabric
-import notebookutils
 
 # intialize a Fabric Rest API Client 
 client = fabric.FabricRestClient()
@@ -75,7 +96,7 @@ client.post(path_or_url=endpoint)
 
 # CELL ********************
 
-%run nb_int_setup_gx
+notebookutils.notebook.run("nb_int_setup_gx")
 
 # METADATA ********************
 
@@ -83,7 +104,3 @@ client.post(path_or_url=endpoint)
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
-
-# MARKDOWN ********************
-
-# Setup Step 1: Run the 

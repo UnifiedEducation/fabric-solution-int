@@ -314,17 +314,6 @@ register_any_datasource(source_type='spark_df', params=asset_stats_params, expec
 
 # CELL ********************
 
-!ls gx/
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
 
 admin_path = f"abfss://{variables.LH_WORKSPACE_NAME}@onelake.dfs.fabric.microsoft.com/{variables.ADMIN_LH_NAME}.Lakehouse"
