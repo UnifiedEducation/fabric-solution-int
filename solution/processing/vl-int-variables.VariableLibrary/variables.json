@@ -5,7 +5,7 @@
       "name": "LH_WORKSPACE_NAME",
       "note": "",
       "type": "String",
-      "value": "int-feature-validation-datastores"
+      "value": "int-feature-logging-datastores"
     },
     {
       "name": "BRONZE_LH_NAME",
@@ -29,49 +29,73 @@
       "name": "_0_INGEST_NOTEBOOK_ID",
       "note": "",
       "type": "String",
-      "value": "fa01f811-cae0-487f-b8aa-f7b73c10a92c"
+      "value": "841ccb16-dcfb-4c31-a06e-2fa3ec4ba20f"
     },
     {
       "name": "_1_LOAD_NOTEBOOK_ID",
       "note": "",
       "type": "String",
-      "value": "e4caf09e-a765-4d2c-991b-d94d8da2224e"
+      "value": "cf554ec2-0561-4b7d-9236-2982c50c0feb"
     },
     {
       "name": "_2_CLEAN_NOTEBOOK_ID",
       "note": "",
       "type": "String",
-      "value": "e8defe6e-49d7-4fc6-9552-f80cd599ab9a"
+      "value": "faebbca0-b3b1-4e0b-a602-f17d73aa5f7f"
     },
     {
       "name": "_3_MODEL_NOTEBOOK_ID",
       "note": "",
       "type": "String",
-      "value": "15a248ab-23a9-495c-9398-074929f0caee"
+      "value": "4fa79592-00a3-4d12-a764-6015468ec56d"
     },
     {
       "name": "_4_VALIDATE_NOTEBOOK_ID",
       "note": "",
       "type": "String",
-      "value": "22c824ae-754d-4ee8-af03-fa1db84e546d"
+      "value": "cb72a29b-848d-426d-a893-fc5a64f08190"
     },
     {
       "name": "LHCREATE_ALL_NOTEBOOK_ID",
       "note": "",
       "type": "String",
-      "value": "03a4b572-9e5a-4ef8-833e-c48779a7d570"
+      "value": "1cb55eac-7491-4e91-a8ea-265729f4d48c"
     },
     {
       "name": "PROCESSING_WORKSPACE_ID",
       "note": "",
       "type": "String",
-      "value": "ae258115-9733-449c-b271-6b910bd68ce3"
+      "value": "120cfabe-3732-4b5e-8351-f2f2a2a59a1a"
     },
     {
       "name": "ADMIN_LH_NAME",
       "note": "",
       "type": "String",
       "value": "lh_int_admin"
+    },
+    {
+      "name": "_LOGGING_NOTEBOOK_ID",
+      "note": "",
+      "type": "String",
+      "value": "b8dfddb8-5ff0-4750-88a7-7bd3097c4ab2"
+    },
+    {
+      "name": "ORCH_PIPELINE_ID",
+      "note": "",
+      "type": "String",
+      "value": "a4401978-cbfb-4887-ae05-593aa40b70f1"
+    },
+    {
+      "name": "ENVIRONMENT_ID",
+      "note": "",
+      "type": "String",
+      "value": "168c1fab-834a-4283-9c1b-6aada0e507ec"
+    },
+    {
+      "name": "ENVIRONMENT_NAME",
+      "note": "",
+      "type": "String",
+      "value": "env_spark_gx"
     }
   ]
 }

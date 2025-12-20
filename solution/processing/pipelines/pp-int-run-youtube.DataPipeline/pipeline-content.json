@@ -31,7 +31,8 @@
                 "workspaceId": {
                   "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
                   "type": "Expression"
-                }
+                },
+                "sessionTag": "sesh"
               }
             }
           ]
@@ -63,7 +64,8 @@
           "workspaceId": {
             "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
             "type": "Expression"
-          }
+          },
+          "sessionTag": "sesh"
         }
       },
       {
@@ -92,7 +94,8 @@
           "workspaceId": {
             "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
             "type": "Expression"
-          }
+          },
+          "sessionTag": "sesh"
         }
       },
       {
@@ -121,7 +124,8 @@
           "workspaceId": {
             "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
             "type": "Expression"
-          }
+          },
+          "sessionTag": "sesh"
         }
       },
       {
@@ -150,7 +154,8 @@
           "workspaceId": {
             "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
             "type": "Expression"
-          }
+          },
+          "sessionTag": "sesh"
         }
       },
       {
@@ -179,7 +184,8 @@
           "workspaceId": {
             "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
             "type": "Expression"
-          }
+          },
+          "sessionTag": "sesh"
         }
       }
     ],

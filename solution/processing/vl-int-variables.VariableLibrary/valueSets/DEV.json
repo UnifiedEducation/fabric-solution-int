@@ -41,6 +41,18 @@
     {
       "name": "LHCREATE_ALL_NOTEBOOK_ID",
       "value": "1a2b2a41-c6e7-4565-bf6d-b8c94c8c84df"
+    },
+    {
+      "name": "ORCH_PIPELINE_ID",
+      "value": "36b5e5cf-2bca-4100-a2e6-ba7f135d15ea"
+    },
+    {
+      "name": "_LOGGING_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "ENVIRONMENT_ID",
+      "value": ""
     }
   ]
 }

@@ -135,6 +135,29 @@ LAKEHOUSE_METADATA = {
                 asset_total_comments INT,
                 modified_TS TIMESTAMP""",
         }
+    },
+    "admin": {
+        "name_variable": "ADMIN_LH_NAME",
+        "schemas": ["log","quality"],
+        "tables": {
+            "log.pipeline_runs": """
+                pipeline_run_id STRING,
+                pipeline_id STRING,
+                pipeline_trigger_time TIMESTAMP,
+                status STRING,
+                execution_duration_seconds BIGINT,
+                error_code STRING,
+                error_message STRING,
+                failure_type STRING,
+                failure_target STRING,
+                logged_at_utc STRING""",
+            "quality.validation_results": """
+                validation_id STRING,
+                expectation_type STRING,
+                column STRING,
+                success BOOLEAN,
+                test_timestamp TIMESTAMP"""
+        }
     }
 }
 
@@ -170,9 +193,6 @@ def create_lakehouse_objects(lakehouse_config):
     for table, ddl in lakehouse_config["tables"].items():
         create_script = f"CREATE TABLE IF NOT EXISTS `{lh_workspace_name}`.`{lh_name}`.{table} ({ddl});"
         spark.sql(create_script)
-
-
-
 
 # METADATA ********************
 
