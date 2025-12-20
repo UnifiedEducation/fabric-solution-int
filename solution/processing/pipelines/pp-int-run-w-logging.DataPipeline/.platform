@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "pp-int-run-w-logging"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "cbd70b71-deeb-b295-4eb2-f16c6bbc3c23"
+  }
+}
