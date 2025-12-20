@@ -16,7 +16,7 @@
     },
     {
       "name": "PROCESSING_WORKSPACE_ID",
-      "value": "1266cf4a-ae93-40c2-9153-a417b3eb7b49"
+      "value": ""
     },
     {
       "name": "_1_LOAD_NOTEBOOK_ID",
@@ -32,6 +32,26 @@
     },
     {
       "name": "_3_MODEL_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "_LOGGING_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "ORCH_PIPELINE_ID",
+      "value": ""
+    },
+    {
+      "name": "_4_VALIDATE_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "LHCREATE_ALL_NOTEBOOK_ID",
+      "value": ""
+    },
+    {
+      "name": "ENVIRONMENT_ID",
       "value": ""
     }
   ]

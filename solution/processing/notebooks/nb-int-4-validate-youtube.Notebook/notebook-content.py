@@ -7,11 +7,29 @@
 # META     "name": "synapse_pyspark"
 # META   },
 # META   "dependencies": {
-# META     "environment": {
-# META       "environmentId": "ec5eb008-6641-80a2-4ba8-def4c4309668",
-# META       "workspaceId": "00000000-0000-0000-0000-000000000000"
-# META     }
+# META     "environment": {}
 # META   }
+# META }
+
+# MARKDOWN ********************
+
+# Runtime Environment setting: 
+
+# CELL ********************
+
+# MAGIC %%configure
+# MAGIC {
+# MAGIC     "environment": {
+# MAGIC         "id": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_ID)"},
+# MAGIC         "name": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_NAME)"}
+# MAGIC     }
+# MAGIC }
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
@@ -28,11 +46,8 @@
 # - Step 4: Run it and log it
 # 
 # This notebook is dynamic: it can be run in Feature workspaces, DEV, TEST and PROD, thanks to the use of Variable libraries (and ABFS paths). 
-
-# MARKDOWN ********************
-
+# 
 # #### Step 0: Define some helper functions
-
 
 # CELL ********************
 

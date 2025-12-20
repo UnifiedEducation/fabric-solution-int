@@ -8,20 +8,32 @@
 # META   },
 # META   "dependencies": {
 # META     "lakehouse": {
-# META       "default_lakehouse": "b117aae6-cd5a-4388-a567-89e49fe29dc2",
-# META       "default_lakehouse_name": "lh_int_admin",
-# META       "default_lakehouse_workspace_id": "6bd03de7-34a3-423b-b674-510b78ac0d75",
-# META       "known_lakehouses": [
-# META         {
-# META           "id": "b117aae6-cd5a-4388-a567-89e49fe29dc2"
-# META         }
-# META       ]
+# META       "default_lakehouse_name": "",
+# META       "default_lakehouse_workspace_id": ""
 # META     },
-# META     "environment": {
-# META       "environmentId": "ec5eb008-6641-80a2-4ba8-def4c4309668",
-# META       "workspaceId": "00000000-0000-0000-0000-000000000000"
-# META     }
+# META     "environment": {}
 # META   }
+# META }
+
+# MARKDOWN ********************
+
+# Runtime Environment configuration: 
+
+# CELL ********************
+
+# MAGIC %%configure
+# MAGIC {
+# MAGIC     "environment": {
+# MAGIC         "id": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_ID)"},
+# MAGIC         "name": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_NAME)"}
+# MAGIC     }
+# MAGIC }
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
@@ -42,9 +54,8 @@
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
-# Initialize context
-context = gx.get_context(mode="file", project_root_dir="/lakehouse/default/Files")
-
+# Initialize context (at the default location "/tmp/gx")
+context = gx.get_context(mode="file", project_root_dir="/tmp/gx_project/")
 
 def get_or_create_datasource(type, params):
     """Gets existing datasource or creates new one."""
@@ -249,9 +260,39 @@ register_any_datasource(type='spark_df', params=asset_stats_params, expectations
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# MARKDOWN ********************
+
+# #### Move the GX Context into the Admin Lakehouse 
+# Up until this 
+
 # CELL ********************
 
-context
+!ls gx/
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+variables = notebookutils.variableLibrary.getLibrary("vl-int-variables")
+
+admin_path = f"abfss://{variables.LH_WORKSPACE_NAME}@onelake.dfs.fabric.microsoft.com/{variables.ADMIN_LH_NAME}.Lakehouse"
+local_path = "/tmp/gx_project/gx"
+# remove any existing gx context (if exists)( 
+destination = f"{admin_path}/Files/gx"
+try:
+    notebookutils.fs.rm(destination, recurse=True)
+except:
+    pass
+
+# Copy GX context from local path to Admin Lakehouse
+source = f"file://{local_path}"
+
+notebookutils.fs.cp(source, destination, recurse=True)
 
 # METADATA ********************
 
