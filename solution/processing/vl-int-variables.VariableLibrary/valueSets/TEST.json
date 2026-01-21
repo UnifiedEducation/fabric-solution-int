@@ -16,43 +16,43 @@
     },
     {
       "name": "PROCESSING_WORKSPACE_ID",
-      "value": ""
+      "value": "1266cf4a-ae93-40c2-9153-a417b3eb7b49"
     },
     {
       "name": "_1_LOAD_NOTEBOOK_ID",
-      "value": ""
+      "value": "6c53042d-04ca-4ad4-b390-5f91c42efb7f"
     },
     {
       "name": "_0_INGEST_NOTEBOOK_ID",
-      "value": ""
+      "value": "2f5e708c-e983-4b08-a71f-b0e9fa1a78a2"
     },
     {
       "name": "_2_CLEAN_NOTEBOOK_ID",
-      "value": ""
+      "value": "477a96db-9b53-4308-a022-280160863af7"
     },
     {
       "name": "_3_MODEL_NOTEBOOK_ID",
-      "value": ""
+      "value": "29c6794f-9057-4372-a549-e9dcc22590fc"
     },
     {
       "name": "_LOGGING_NOTEBOOK_ID",
-      "value": ""
+      "value": "e0e0cf65-e6a1-4710-8015-f41e605af002"
     },
     {
       "name": "ORCH_PIPELINE_ID",
-      "value": ""
+      "value": "2ca4ed7f-fa46-497b-9b10-247a6171eda8"
     },
     {
       "name": "_4_VALIDATE_NOTEBOOK_ID",
-      "value": ""
+      "value": "4d02dbab-0068-4b65-80cf-616c11628b3b"
     },
     {
       "name": "LHCREATE_ALL_NOTEBOOK_ID",
-      "value": ""
+      "value": "f6d07082-c476-4df7-9434-051d5690a47b"
     },
     {
       "name": "ENVIRONMENT_ID",
-      "value": ""
+      "value": "0fb26105-6983-479b-91e6-3fce6844861b"
     }
   ]
 }
