@@ -42,6 +42,11 @@ jobs:
       - name: Authenticate to Fabric
         run: fab auth login -u ${{ env.AZURE_CLIENT_ID }} -p ${{ env.AZURE_CLIENT_SECRET }} --tenant ${{ env.AZURE_TENANT_ID }}
 
+      - name: Configure Azure Context
+        run: |
+          fab config set default_az_subscription_id ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          fab config set default_az_resource_group ${{ vars.RESOURCE_GROUP }}
+
       - name: Resume Capacity
         run: fab start .capacities/${{ vars.CAPACITY_NAME }}.Capacity -f
 
