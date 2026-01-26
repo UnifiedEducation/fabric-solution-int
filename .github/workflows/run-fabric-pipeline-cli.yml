@@ -1,0 +1,50 @@
+name: Run Fabric Pipeline (using CLI)
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+  FABRIC_CLI_VERSION: '1.2.0'
+
+jobs:
+  run-pipeline:
+    runs-on: windows-latest
+
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.SPN_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.SPN_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Fabric CLI
+        run: pip install ms-fabric-cli==${{ env.FABRIC_CLI_VERSION }}
+
+      - name: Authenticate to Fabric
+        run: fab auth login -u ${{ env.AZURE_CLIENT_ID }} -p ${{ env.AZURE_CLIENT_SECRET }} --tenant ${{ env.AZURE_TENANT_ID }}
+
+      - name: Resume Capacity
+        run: |
+          az login --service-principal -u ${{ env.AZURE_CLIENT_ID }} -p ${{ env.AZURE_CLIENT_SECRET }} --tenant ${{ env.AZURE_TENANT_ID }}
+          az resource invoke-action --action resume `
+            --ids "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}"
+
+      - name: Wait for Capacity
+        run: Start-Sleep -Seconds 60
+
+      - name: Run Pipeline
+        run: fab item run ${{ vars.PIPELINE_ITEM_ID }} -w ${{ vars.WORKSPACE_ID }} --wait --timeout 7200
+
+      - name: Suspend Capacity
+        if: always()
+        run: |
+          az resource invoke-action --action suspend `
+            --ids "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}"
