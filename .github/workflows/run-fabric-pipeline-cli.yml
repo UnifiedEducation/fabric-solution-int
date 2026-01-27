@@ -4,6 +4,17 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      pipeline_name:
+        description: 'Pipeline name'
+        required: true
+        type: string
+        default: 'pp-int-run-w-logging'
+      workspace_name:
+        description: 'Workspace name'
+        required: true
+        type: string
+        default: 'int-prod-processing'
 
 env:
   PYTHON_VERSION: '3.12'
@@ -31,20 +42,17 @@ jobs:
       - name: Authenticate to Fabric
         run: fab auth login -u ${{ env.AZURE_CLIENT_ID }} -p ${{ env.AZURE_CLIENT_SECRET }} --tenant ${{ env.AZURE_TENANT_ID }}
 
-      - name: Resume Capacity
+      - name: Configure Azure Context
         run: |
-          az login --service-principal -u ${{ env.AZURE_CLIENT_ID }} -p ${{ env.AZURE_CLIENT_SECRET }} --tenant ${{ env.AZURE_TENANT_ID }}
-          az resource invoke-action --action resume `
-            --ids "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}"
+          fab config set default_az_subscription_id ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          fab config set default_az_resource_group ${{ vars.RESOURCE_GROUP }}
 
-      - name: Wait for Capacity
-        run: Start-Sleep -Seconds 60
+      - name: Resume Capacity
+        run: fab start .capacities/${{ vars.CAPACITY_NAME }}.Capacity -f
 
       - name: Run Pipeline
-        run: fab item run ${{ vars.PIPELINE_ITEM_ID }} -w ${{ vars.WORKSPACE_ID }} --wait --timeout 7200
+        run: fab job run "${{ inputs.workspace_name }}.Workspace/${{ inputs.pipeline_name }}.DataPipeline" --timeout 7200
 
       - name: Suspend Capacity
         if: always()
-        run: |
-          az resource invoke-action --action suspend `
-            --ids "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.RESOURCE_GROUP }}/providers/Microsoft.Fabric/capacities/${{ vars.CAPACITY_NAME }}"
+        run: fab stop .capacities/${{ vars.CAPACITY_NAME }}.Capacity -f
