@@ -1,8 +1,8 @@
-name: Run Fabric Pipeline (using CLI) - currently disabled. 
+name: Run Fabric Pipeline (using CLI) 
 
 on:
-#  schedule:
-#    - cron: '0 6 * * *' # 
+  schedule:
+    - cron: '0 6 * * *' # 
   workflow_dispatch:
     inputs:
       pipeline_name:
@@ -51,7 +51,7 @@ jobs:
         run: fab start .capacities/${{ vars.CAPACITY_NAME }}.Capacity -f
 
       - name: Run Pipeline
-        run: fab job run "${{ inputs.workspace_name }}.Workspace/${{ inputs.pipeline_name }}.DataPipeline" --timeout 7200
+        run: fab job run "${{ inputs.workspace_name || 'int-prod-processing' }}.Workspace/${{ inputs.pipeline_name || 'pp-int-run-w-logging' }}.DataPipeline" --timeout 7200
 
       - name: Suspend Capacity
         if: always()
