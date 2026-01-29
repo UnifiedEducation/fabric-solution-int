@@ -1,8 +1,8 @@
-name: Run Fabric Pipeline
+name: Run Fabric Pipeline (DEPRECATED - see CLI version)
 
 on:
-  schedule:
-    - cron: '0 6 * * *'
+#   schedule:
+#     - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       pipeline_id:
