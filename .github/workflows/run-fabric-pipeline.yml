@@ -1,9 +1,14 @@
-name: Run Fabric Pipeline (DEPRECATED - use CLI version)
+name: Run Fabric Pipeline
 
-# DISABLED - Replaced by run-fabric-pipeline-cli.yml
 on:
-  push:
-    branches: [disabled]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      pipeline_id:
+        description: 'Pipeline Item ID (leave empty for default)'
+        required: false
+        type: string
 
 env:
   POLL_INTERVAL: 30

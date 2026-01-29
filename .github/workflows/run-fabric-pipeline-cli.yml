@@ -1,8 +1,8 @@
-name: Run Fabric Pipeline (using CLI)
+name: Run Fabric Pipeline (using CLI) - currently disabled. 
 
 on:
-  schedule:
-    - cron: '0 6 * * *'
+#  schedule:
+#    - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       pipeline_name:
