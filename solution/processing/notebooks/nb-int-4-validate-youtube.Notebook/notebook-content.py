@@ -15,23 +15,6 @@
 
 # Runtime Environment setting: 
 
-# CELL ********************
-
-# MAGIC %%configure
-# MAGIC {
-# MAGIC     "environment": {
-# MAGIC         "id": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_ID)"},
-# MAGIC         "name": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_NAME)"}
-# MAGIC     }
-# MAGIC }
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
 # MARKDOWN ********************
 
 # ## PRJ006 🔶 INT Project, Sprint 6/7 - Running GX on Gold Layer

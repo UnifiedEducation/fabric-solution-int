@@ -22,6 +22,9 @@
             "type": "Expression"
           },
           "sessionTag": "sesh"
+        },
+        "externalReferences": {
+          "connection": "f5856a08-713c-467a-8b8c-a805a574f176"
         }
       },
       {
@@ -52,6 +55,9 @@
             "type": "Expression"
           },
           "sessionTag": "sesh"
+        },
+        "externalReferences": {
+          "connection": "f5856a08-713c-467a-8b8c-a805a574f176"
         }
       },
       {
@@ -82,6 +88,9 @@
             "type": "Expression"
           },
           "sessionTag": "sesh"
+        },
+        "externalReferences": {
+          "connection": "f5856a08-713c-467a-8b8c-a805a574f176"
         }
       },
       {
@@ -112,6 +121,9 @@
             "type": "Expression"
           },
           "sessionTag": "sesh"
+        },
+        "externalReferences": {
+          "connection": "f5856a08-713c-467a-8b8c-a805a574f176"
         }
       },
       {
@@ -142,15 +154,12 @@
             "type": "Expression"
           },
           "sessionTag": "sesh"
+        },
+        "externalReferences": {
+          "connection": "f5856a08-713c-467a-8b8c-a805a574f176"
         }
       }
     ],
-    "parameters": {
-      "RUN_LHCREATE_BOOL": {
-        "type": "bool",
-        "defaultValue": false
-      }
-    },
     "libraryVariables": {
       "vlintvariables_LHCREATE_ALL_NOTEBOOK_ID": {
         "type": "String",

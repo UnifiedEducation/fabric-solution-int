@@ -23,12 +23,10 @@
             "value": "@pipeline().libraryVariables.vlintvariables_PROCESSING_WORKSPACE_ID",
             "type": "Expression"
           },
-          "parameters": {
-            "RUN_LHCREATE_BOOL": true
-          }
+          "parameters": {}
         },
         "externalReferences": {
-          "connection": "73380b86-2f81-4580-90f3-91c495fcbe62"
+          "connection": "f9753275-66ce-4395-9f7a-02390c535690"
         }
       },
       {
@@ -96,6 +94,9 @@
             }
           },
           "sessionTag": "sesh"
+        },
+        "externalReferences": {
+          "connection": "f5856a08-713c-467a-8b8c-a805a574f176"
         }
       }
     ],
