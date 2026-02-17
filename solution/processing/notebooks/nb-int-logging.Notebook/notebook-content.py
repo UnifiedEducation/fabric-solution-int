@@ -12,11 +12,8 @@
 # MARKDOWN ********************
 
 # #### PRJ006 🔶 INT Project (Sprint 6): Pipeline Execution Logging
-#
 # > The code in this notebook is written as part of Sprint 6 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about).
-#
 # This notebook receives pipeline execution metadata (via parameters) and writes a log record to the Admin Lakehouse. It is called by the `pp-int-run-w-logging` pipeline on completion (regardless of success or failure).
-#
 # #### Parameters
 # The following parameters are passed in by the calling pipeline:
 

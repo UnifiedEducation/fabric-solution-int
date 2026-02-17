@@ -17,27 +17,6 @@
 
 # MARKDOWN ********************
 
-# Runtime Environment configuration: 
-
-# CELL ********************
-
-# MAGIC %%configure
-# MAGIC {
-# MAGIC     "environment": {
-# MAGIC         "id": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_ID)"},
-# MAGIC         "name": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_NAME)"}
-# MAGIC     }
-# MAGIC }
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
 # #### PRJ006 🔶 INT Project (Sprint 6): Setup Great Expectations Context
 #  
 # > The code in this notebook is written as part of Sprint 6 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about). 
