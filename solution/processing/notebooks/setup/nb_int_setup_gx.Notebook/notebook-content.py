@@ -309,8 +309,8 @@ register_any_datasource(source_type='spark_df', params=asset_stats_params, expec
 
 # MARKDOWN ********************
 
-# #### Move the GX Context into the Admin Lakehouse 
-# Up until this 
+# #### Move the GX Context into the Admin Lakehouse
+# Copy the locally-built GX context files into the Admin Lakehouse so they can be used by the validation notebook at runtime. 
 
 # CELL ********************
 

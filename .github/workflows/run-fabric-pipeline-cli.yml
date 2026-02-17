@@ -1,24 +1,24 @@
-name: Run Fabric Pipeline (using CLI) 
+name: Run Fabric Pipeline (using CLI)
 
 on:
   schedule:
-    - cron: '0 6 * * *' # 
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       pipeline_name:
-        description: 'Pipeline name'
+        description: "Pipeline name"
         required: true
         type: string
-        default: 'pp-int-run-w-logging'
+        default: "pp-int-run-w-logging"
       workspace_name:
-        description: 'Workspace name'
+        description: "Workspace name"
         required: true
         type: string
-        default: 'int-prod-processing'
+        default: "int-prod-processing"
 
 env:
-  PYTHON_VERSION: '3.12'
-  FABRIC_CLI_VERSION: '1.2.0'
+  PYTHON_VERSION: "3.12"
+  FABRIC_CLI_VERSION: "1.2.0"
 
 jobs:
   run-pipeline:

@@ -161,11 +161,6 @@
       }
     ],
     "libraryVariables": {
-      "vlintvariables_LHCREATE_ALL_NOTEBOOK_ID": {
-        "type": "String",
-        "variableName": "LHCREATE_ALL_NOTEBOOK_ID",
-        "libraryName": "vl-int-variables"
-      },
       "vlintvariables__0_INGEST_NOTEBOOK_ID": {
         "type": "String",
         "variableName": "_0_INGEST_NOTEBOOK_ID",

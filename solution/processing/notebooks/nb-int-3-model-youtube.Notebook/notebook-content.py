@@ -13,7 +13,7 @@
 
 # #### PRJ005 🔶 INT Project (Sprint 5): Data MODEL Notebook (YouTube Datasets)  
 #  
-# > The code in this notebook is written as part of Week 5 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about). The intention is first to get the functionality working, in a way that's understandable for the community. Then, in future weeks, we will layer in things like refactoring, testing, error-handling, more defensive coding patterns to make our cleaning  more robust.
+# > The code in this notebook is written as part of Week 5 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about). The intention is first to get the functionality working, in a way that's understandable for the community. Then, in future weeks, we will layer in things like refactoring, testing, error-handling, more defensive coding patterns to make our modelling more robust.
 # 
 # #### In this notebook:
 # - Step 0: Step Up - get variable library, define helper functions
@@ -250,32 +250,32 @@ full_write_path = f"{gold_lh_base_path}Tables/marketing/assets"
 delta_table = DeltaTable.forPath(spark, full_write_path)
 target_df = delta_table.toDF()
 
-# Get max surrogate ID (same as advanced line 489-491)
+# Get max surrogate ID from existing data
 max_id = target_df.agg(F.coalesce(F.max("asset_surrogate_id"), F.lit(0))).collect()[0][0]
 
-# Create existing natural_key -> surrogate_key mapping (same as advanced lines 494-498)
+# Create existing natural_key -> surrogate_key mapping
 existing_lookup = target_df.select(
     F.col("asset_natural_id").alias("_lookup_natural_key"),
     F.col("asset_surrogate_id").alias("_existing_surrogate_id")
 )
 
-# Join source with existing lookup (same as advanced lines 504-508)
+# Join source with existing lookup to identify new vs existing records
 df_with_existing = source_df.join(
     existing_lookup,
     source_df["asset_natural_id"] == existing_lookup["_lookup_natural_key"],
     "left"
 )
 
-# Split into existing and new records (same as advanced lines 511-512)
+# Split into existing and new records
 existing_records = df_with_existing.filter(F.col("_existing_surrogate_id").isNotNull())
 new_records = df_with_existing.filter(F.col("_existing_surrogate_id").isNull())
 
-# For existing records: preserve their existing surrogate ID (same as advanced lines 515-517)
+# For existing records: preserve their existing surrogate ID
 existing_with_key = existing_records.withColumn(
     "asset_surrogate_id", F.col("_existing_surrogate_id")
 ).drop("_lookup_natural_key", "_existing_surrogate_id")
 
-# For new records: generate new surrogate IDs (same as advanced lines 520-524)
+# For new records: generate new surrogate IDs starting from max_id + 1
 if new_records.count() > 0:
     window_spec = Window.orderBy("asset_publish_date")
     new_with_key = new_records.withColumn(
