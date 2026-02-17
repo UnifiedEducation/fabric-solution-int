@@ -11,27 +11,8 @@
 
 # MARKDOWN ********************
 
-# Runtime Environment configuration: 
-
-# CELL ********************
-
-# MAGIC %%configure -f
-# MAGIC {
-# MAGIC     "environment": {
-# MAGIC         "id": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_ID)"},
-# MAGIC         "name": {"variableName": "$(/**/vl-int-variables/ENVIRONMENT_NAME)"}
-# MAGIC     }
-# MAGIC }
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
+# # Setup New Workspace script
+# 
 # This notebook should be run each time you create a new workspace/ environment (for example, when developing a new feature). 
 # 
 # 1. Run Lakehouse Creation Scripts
