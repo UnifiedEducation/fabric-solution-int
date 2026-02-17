@@ -11,8 +11,8 @@
 
 # MARKDOWN ********************
 
-# #### PRJ105 🔶 INT Project (Sprint 6): Orchestration Lakehouse Development - ALL TABLES
-# > The code in this notebook is written as part of Week 5 of the Advanced Project, in [Fabric Dojo](https://skool.com/fabricdojo/about).
+# #### PRJ006 🔶 INT Project (Sprint 6): Orchestration Lakehouse Development - ALL TABLES
+# > The code in this notebook is written as part of Sprint 6 of the Intermediate Project, in [Fabric Dojo](https://skool.com/fabricdojo/about).
 # 
 # This notebook is a refactoring of the other three Lakehouse Development notebooks - for ease of deployment. 
 # 
